@@ -29,7 +29,7 @@ public class UserController {
         int userId = ++userIdCounter;
         user.setId(userId);
         users.put(userId,user);
-        log.info("Пользователь с логином: {} добавлен", user.getLogin());
+        log.info("Пользователь с логином: {} добавлен.", user.getLogin());
         return user;
     }
 
