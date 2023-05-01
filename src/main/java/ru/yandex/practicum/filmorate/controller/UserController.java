@@ -39,9 +39,9 @@ public class UserController {
         int userId = user.getId();
         if (users.containsKey(userId)) {
             users.put(userId, user);
-            log.info("Данные пользователя с логином: {} отредактированы", user.getLogin());
+            log.info("Данные пользователя с логином: {} изменены.", user.getLogin());
             return user;
         } else
-            throw new NotExistException("Пользователя с логином: " + user.getLogin() + " не существует");
+            throw new NotExistException("Пользователя с логином: " + user.getLogin() + " не существует.");
     }
 }
