@@ -22,6 +22,7 @@ public class UserController {
     public Collection<User> getAllUsers() {
         return users.values();
     }
+
     @PostMapping
     public User addUser(@Valid @RequestBody User user) {
         UserValidate.validate(user);
