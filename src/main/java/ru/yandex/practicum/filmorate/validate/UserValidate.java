@@ -15,6 +15,7 @@ public class UserValidate {
             throw new ValidationException("Логин содержит пробел");
         }
         if (user.getName() == null || user.getName().isEmpty()) {
+            user.setName(user.getLogin());
             log.warn("Имя пользователя не заполнено. Вместо имени пользователя используется логин: {}", user.getLogin());
         }
     }
