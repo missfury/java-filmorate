@@ -21,6 +21,12 @@ public class FilmController {
         return films.values();
     }
 
+    @GetMapping("/{id}")
+    public Film getFilmById(@PathVariable int id) {
+        Film film = films.getOrDefault(id, null);
+        return film;
+    }
+
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film) {
         FilmValidate.validate(film);

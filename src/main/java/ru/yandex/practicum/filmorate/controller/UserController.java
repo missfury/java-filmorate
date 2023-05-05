@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.validate.UserValidate;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
@@ -21,6 +22,12 @@ public class UserController {
     @GetMapping
     public Collection<User> getAllUsers() {
         return users.values();
+    }
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable int id) {
+       User user = users.getOrDefault(id, null);
+        return user;
     }
 
     @PostMapping
