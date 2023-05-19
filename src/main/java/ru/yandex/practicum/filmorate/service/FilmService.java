@@ -57,14 +57,14 @@ public class FilmService {
         return filmStorage.getFilmById(filmId);
     }
 
-    public List<Film> getPopularFilms(int count){
+    public List<Film> getPopularFilms(int count) {
         return filmStorage.getFilms().stream()
                 .sorted((o1, o2) -> Integer.compare(o2.getUsersLikes().size(), o1.getUsersLikes().size()))
                 .limit(count)
                 .collect(Collectors.toList());
     }
 
-    private void checkFilmExist(int filmId){
+    private void checkFilmExist(int filmId) {
         if (!filmStorage.getFilmsMap().containsKey(filmId))
             throw new NotExistException("Фильма с id: " + filmId + " нет в каталоге.");
     }
