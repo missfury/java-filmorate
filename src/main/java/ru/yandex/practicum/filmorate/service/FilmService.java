@@ -41,14 +41,14 @@ public class FilmService {
         return filmStorage.deleteFilmById(filmId);
     }
 
-    public Film addLike(int filmId, int userId){
+    public Film addLike(int filmId, int userId) {
         checkFilmExist(filmId);
         filmStorage.getFilmById(filmId).getUsersLikes().add(userId);
         log.info("Пользователь с id: {} поставил лайк фильму с id: {}", userId, filmId);
         return filmStorage.getFilmById(filmId);
     }
 
-    public Film deleteLike(int filmId, int userId){
+    public Film deleteLike(int filmId, int userId) {
         checkFilmExist(filmId);
         if (!filmStorage.getFilmById(filmId).getUsersLikes().contains(userId))
             throw new NotExistException("Лайк от пользователя с id: " + userId + " не найден у фильма с id: " + filmId);
