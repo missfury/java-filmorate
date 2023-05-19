@@ -81,8 +81,8 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    private void checkUserExist(List<Integer> userIdList){
-        for (Integer userId : userIdList){
+    private void checkUserExist(List<Integer> userIdList) {
+        for (Integer userId : userIdList) {
             if (!userStorage.getUsersMap().containsKey(userId))
                 throw new NotExistException("Пользователя с id: " + userId + " не существует.");
         }
