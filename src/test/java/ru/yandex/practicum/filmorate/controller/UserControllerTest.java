@@ -5,9 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
-
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class UserControllerTest {
     private User user;
-    private UserController userController;
+    private UserService userService;
     private Validator validator;
 
     @BeforeEach
@@ -31,19 +32,19 @@ class UserControllerTest {
         user.setLogin("test");
         user.setName("Petya");
         user.setBirthday(LocalDate.of(2022, 1, 1));
-        userController = new UserController();
+        userService = new UserService(new InMemoryUserStorage());
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
     }
 
     @Test
     void createAndGetValidUser() {
-        userController.addUser(user);
-        User returnedUser = userController.getAllUsers().iterator().next();
+        userService.addUser(user);
+        User returnedUser = userService.getUsers().iterator().next();
         Set<ConstraintViolation<User>> violations = validator.validate(user);
 
         assertTrue(violations.isEmpty());
-        assertEquals(1,userController.getAllUsers().size());
+        assertEquals(1,userService.getUsers().size());
         assertEquals(user.getEmail(), returnedUser.getEmail());
         assertEquals(user.getLogin(), returnedUser.getLogin());
         assertEquals(user.getName(), returnedUser.getName());
@@ -82,16 +83,16 @@ class UserControllerTest {
     void createUserWithNotValidLogin() {
         user.setLogin("test login");
 
-        assertThrows(ValidationException.class, () -> userController.addUser(user));
+        assertThrows(ValidationException.class, () -> userService.addUser(user));
     }
 
     @Test
     void createUserWithNullName() {
         user.setName(null);
-        userController.addUser(user);
-        User returnedUser = userController.getAllUsers().iterator().next();
+        userService.addUser(user);
+        User returnedUser = userService.getUsers().iterator().next();
 
-        assertEquals(1, userController.getAllUsers().size());
+        assertEquals(1, userService.getUsers().size());
         assertEquals(user.getEmail(), returnedUser.getEmail());
         assertEquals(user.getLogin(), returnedUser.getLogin());
         assertEquals(user.getLogin(), returnedUser.getName());
@@ -101,10 +102,10 @@ class UserControllerTest {
     @Test
     void createUserWithBlankName() {
         user.setName("");
-        userController.addUser(user);
-        User returnedUser = userController.getAllUsers().iterator().next();
+        userService.addUser(user);
+        User returnedUser = userService.getUsers().iterator().next();
 
-        assertEquals(1, userController.getAllUsers().size());
+        assertEquals(1, userService.getUsers().size());
         assertEquals(user.getEmail(), returnedUser.getEmail());
         assertEquals(user.getLogin(), returnedUser.getLogin());
         assertEquals(user.getLogin(), returnedUser.getName());
@@ -122,12 +123,12 @@ class UserControllerTest {
 
     @Test
     void updateUser() {
-        userController.addUser(user);
+        userService.addUser(user);
         user.setEmail("test@ya.ru");
-        userController.updateUser(user);
-        User returnedUser = userController.getAllUsers().iterator().next();
+        userService.updateUser(user);
+        User returnedUser = userService.getUsers().iterator().next();
 
-        assertEquals(userController.getAllUsers().size(), 1);
+        assertEquals(1,userService.getUsers().size());
         assertEquals(user.getEmail(), returnedUser.getEmail());
         assertEquals(user.getLogin(), returnedUser.getLogin());
         assertEquals(user.getName(), returnedUser.getName());
@@ -136,6 +137,6 @@ class UserControllerTest {
 
     @Test
     void updateMissingUser() {
-        assertThrows(NotExistException.class, () -> userController.updateUser(user));
+        assertThrows(NotExistException.class, () -> userService.updateUser(user));
     }
 }
