@@ -82,7 +82,7 @@ public class UserService {
         }
     }
 
-    private void checkUsersDifferent(int firstUserId, int secondUserId){
+    private void checkUsersDifferent(int firstUserId, int secondUserId) {
         if (firstUserId == secondUserId)
             throw new ValidationException("Пользователь не может быть другом самому себе");
     }
