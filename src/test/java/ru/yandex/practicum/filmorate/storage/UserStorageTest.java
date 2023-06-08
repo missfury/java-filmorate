@@ -42,7 +42,7 @@ class UserStorageTest {
 
     @AfterEach
     void clear() {
-        for (User user : userStorage.getUsers()){
+        for (User user : userStorage.getUsers()) {
             userStorage.deleteUserById(user.getId());
         }
     }
