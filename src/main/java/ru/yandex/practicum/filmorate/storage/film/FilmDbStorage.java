@@ -63,7 +63,7 @@ public class FilmDbStorage implements FilmStorage {
         }, generatedId);
         film.setId(Objects.requireNonNull(generatedId.getKey()).intValue());
 
-        if (film.getGenres() != null){
+        if (film.getGenres() != null) {
             addGenresToFilm(film);
         }
         film.setMpa(getMpaById(film.getMpa().getId()));
