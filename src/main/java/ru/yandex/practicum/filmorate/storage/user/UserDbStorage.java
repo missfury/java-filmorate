@@ -118,7 +118,7 @@ public class UserDbStorage implements UserStorage {
                 friendId);
     }
 
-    private List<User> getFriendById(int id) {
+    private List<User> getFriendsById(int id) {
         return jdbcTemplate.query(
                 "SELECT * FROM users WHERE id IN (SELECT friend_id FROM friends WHERE user_id = ?)",
                 this::makeUser,
@@ -132,7 +132,7 @@ public class UserDbStorage implements UserStorage {
         String name = resultSet.getString("name");
         LocalDate birthday = resultSet.getDate("birthday").toLocalDate();
         Set<Integer> friends = new HashSet<>();
-        for (User user : getFriendById(id)) {
+        for (User user : getFriendsById(id)) {
             friends.add(user.getId());
         }
         return new User(id, email, login, name, birthday, friends);
