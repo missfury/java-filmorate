@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -38,7 +37,6 @@ public class UserService {
     }
 
     public User deleteUserById(int userId) {
-        checkUserExist(List.of(userId));
         return userStorage.deleteUserById(userId);
     }
 
@@ -46,8 +44,10 @@ public class UserService {
         if (userId == friendId)
             throw new ValidationException("Пользователь не может быть другом самому себе.");
         checkUserExist(List.of(userId,friendId));
-        userStorage.getUserById(userId).getFriends().add(friendId);
-        userStorage.getUserById(friendId).getFriends().add(userId);
+        if (userStorage.getUserById(userId).getFriends().contains(friendId) &&
+        userStorage.getUserById(friendId).getFriends().contains(userId))
+            throw new ValidationException("Пользователи с id {} и {} уже друзья");
+        userStorage.addFriendship(userId, friendId);
         log.info("Пользователи с id: {} и {} стали друзьями.", userId, friendId);
         return userStorage.getUserById(userId);
     }
@@ -83,8 +83,7 @@ public class UserService {
 
     private void checkUserExist(List<Integer> userIdList) {
         for (Integer userId : userIdList) {
-            if (!userStorage.getUsersMap().containsKey(userId))
-                throw new NotExistException("Пользователя с id: " + userId + " не существует.");
+            userStorage.getUserById(userId);
         }
     }
 }

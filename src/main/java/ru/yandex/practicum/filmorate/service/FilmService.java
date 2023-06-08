@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.validate.FilmValidate;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
+import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 
 import java.util.Collection;
 import java.util.List;
@@ -43,18 +44,17 @@ public class FilmService {
 
     public Film addLike(int filmId, int userId) {
         checkFilmExist(filmId);
-        filmStorage.getFilmById(filmId).getUsersLikes().add(userId);
-        log.info("Пользователь с id: {} поставил лайк фильму с id: {}", userId, filmId);
-        return filmStorage.getFilmById(filmId);
+        if (filmStorage.getFilmById(filmId).getUsersLikes().contains(userId))
+            throw new ValidationException("Лайк от пользователя с id: " + userId +
+            " уже существует для фильма с id: " + filmId);
+        return filmStorage.addLike(filmId, userId);
     }
 
     public Film deleteLike(int filmId, int userId) {
         checkFilmExist(filmId);
         if (!filmStorage.getFilmById(filmId).getUsersLikes().contains(userId))
             throw new NotExistException("Лайк от пользователя с id: " + userId + " не найден у фильма с id: " + filmId);
-        filmStorage.getFilmById(filmId).getUsersLikes().remove(userId);
-        log.info("Пользователь с id: {} удалил лайк у фильма с id: {}", userId, filmId);
-        return filmStorage.getFilmById(filmId);
+        return filmStorage.removeLike(filmId, userId);
     }
 
     public List<Film> getPopularFilms(int count) {
@@ -65,7 +65,6 @@ public class FilmService {
     }
 
     private void checkFilmExist(int filmId) {
-        if (!filmStorage.getFilmsMap().containsKey(filmId))
-            throw new NotExistException("Фильма с id: " + filmId + " нет в каталоге.");
+        filmStorage.getFilmById(filmId);
     }
 }

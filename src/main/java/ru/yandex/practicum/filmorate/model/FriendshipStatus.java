@@ -1,2 +1,6 @@
-package ru.yandex.practicum.filmorate.model;public class FriendshipStatus {
+package ru.yandex.practicum.filmorate.model;
+
+public enum FriendshipStatus {
+    REQUEST,
+    CONFIRMED
 }
