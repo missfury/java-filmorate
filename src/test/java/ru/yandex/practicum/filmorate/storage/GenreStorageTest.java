@@ -30,16 +30,14 @@ class GenreStorageTest {
         Assertions.assertThat(genres)
                 .isNotEmpty()
                 .extracting(Genre::getName)
-                .containsAll(Arrays.asList("Комедия", "Мультфильм", "Ужасы", "Фантастика", "Триллер", "Боевик",
-                "Мелодрама", "Детектив", "Драма", "Документальный"));
+                .containsAll(Arrays.asList("Комедия", "Драма", "Мультфильм", "Триллер", "Документальный", "Боевик"));
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1,2,3,4,5,6,7,8,9,10})
+    @ValueSource(ints = {1,2,3,4,5,6})
     void getGenreById(int num) {
         Genre genre = genreStorage.getById(num);
-        String[] arg = new String[]{"Пусто", "Комедия", "Мультфильм", "Ужасы", "Фантастика", "Триллер",
-        "Боевик", "Мелодрама", "Детектив", "Драма", "Документальный"};
+        String[] arg = new String[]{"Пусто", "Комедия", "Драма", "Мультфильм", "Триллер", "Документальный", "Боевик"};
         assertEquals(num, genre.getId());
         assertEquals(arg[num], genre.getName());
     }
