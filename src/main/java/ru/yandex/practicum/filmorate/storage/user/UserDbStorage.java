@@ -118,14 +118,14 @@ public class UserDbStorage implements UserStorage {
                 friendId);
     }
 
-    private List<User> getFriendsById(int id) {
+    private List<User> getFriendsById(int id){
         return jdbcTemplate.query(
                 "SELECT * FROM users WHERE id IN (SELECT friend_id FROM friends WHERE user_id  = ?)",
                 this::makeUser,
                 id);
     }
 
-    private User makeUser(ResultSet resultSet, int rowNum) throws SQLException {
+    private User makeUser(ResultSet resultSet, int rowNum) throws SQLException{
         int id = resultSet.getInt("id");
         String email = resultSet.getString("email");
         String login = resultSet.getString("login");
