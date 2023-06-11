@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 
@@ -20,12 +19,6 @@ public class GenreService {
     }
 
     public Genre getById(int id) {
-        return genreStorage.getById(id)
-                .orElseThrow(() -> new NotExistException("Genre with id: " + id + " does not exist"));
-    }
-
-    public void throwIfGenreNotExist(int id) {
-        if (!genreStorage.checkGenreExist(id))
-            throw new NotExistException("Genre with id: " + id + " does not exist");
+        return genreStorage.getById(id);
     }
 }

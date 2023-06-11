@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
@@ -20,12 +19,6 @@ public class MpaService {
     }
 
     public Mpa getById(int id) {
-        return mpaStorage.getById(id)
-                .orElseThrow(() -> new NotExistException("Рейтинга с id: " + id + " не существует"));
-    }
-
-    public void throwIfMpaNotExist(int id) {
-        if (!mpaStorage.checkMpaExist(id))
-            throw new NotExistException("Рейтинга с id: " + id + " не существует");
+        return mpaStorage.getById(id);
     }
 }

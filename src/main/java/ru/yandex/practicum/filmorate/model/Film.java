@@ -1,8 +1,5 @@
 package ru.yandex.practicum.filmorate.model;
-
-import lombok.Builder;
 import lombok.Data;
-
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
@@ -10,11 +7,9 @@ import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-
 import java.util.List;
 
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class Film {
@@ -31,10 +26,5 @@ public class Film {
     private List<Integer> usersLikes;
     private Mpa mpa;
     private List<Genre> genres;
-
-    public void addGenre(Genre genre) {
-        genres.add(genre);
-    }
-
 }
 

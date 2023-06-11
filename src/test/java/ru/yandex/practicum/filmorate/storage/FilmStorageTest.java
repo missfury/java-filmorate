@@ -58,8 +58,7 @@ class FilmStorageTest {
         film.setName("Film Name1");
         film.setDescription("Film Description1");
         filmStorage.updateFilm(film);
-        Film newFilm = filmStorage.getFilmById(film.getId())
-                .orElseThrow(() -> new NotExistException("Фильма с id: " + film.getId() + " не существует"));
+        Film newFilm = filmStorage.getFilmById(film.getId());
 
         assertEquals("Film Name1", newFilm.getName());
         assertEquals("Film Description1", newFilm.getDescription());
@@ -70,8 +69,7 @@ class FilmStorageTest {
         filmStorage.addFilm(film);
         filmStorage.deleteFilmById(film.getId());
 
-        assertThrows(NotExistException.class, () -> filmStorage.getFilmById(film.getId())
-                .orElseThrow(() -> new NotExistException("Фильма с id: " + film.getId() + " не существует")));
+        assertThrows(NotExistException.class, () -> filmStorage.getFilmById(film.getId()));
     }
 
     @Test
@@ -79,17 +77,13 @@ class FilmStorageTest {
         filmStorage.addFilm(film);
         userStorage.addUser(user);
         filmStorage.addLike(film.getId(), user.getId());
-        Film newFilm = filmStorage.getFilmById(film.getId())
-                .orElseThrow(() -> new NotExistException("Фильма с id: " + film.getId() + " не существует"));
+        Film newFilm = filmStorage.getFilmById(film.getId());
 
         assertEquals(user.getId(), newFilm.getUsersLikes().get(0));
 
-        filmStorage.removeLike(film.getId(), user.getId());
-        newFilm = filmStorage.getFilmById(film.getId())
-                .orElseThrow(() -> new NotExistException("Фильма с id: " + film.getId() + " не существует"));
+        newFilm = filmStorage.removeLike(film.getId(), user.getId());
 
         assertTrue(newFilm.getUsersLikes().isEmpty());
-
 
     }
 }

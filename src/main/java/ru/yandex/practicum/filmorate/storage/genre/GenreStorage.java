@@ -1,18 +1,12 @@
 package ru.yandex.practicum.filmorate.storage.genre;
 
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.Collection;
 
 public interface GenreStorage {
 
-    List<Genre> getAll();
+    Collection<Genre> getAll();
 
-    Optional<Genre> getById(int id);
-
-    boolean checkGenreExist(int id);
-
-    void loadFilmsGenres(List<Film> films);
+    Genre getById(int id);
 }

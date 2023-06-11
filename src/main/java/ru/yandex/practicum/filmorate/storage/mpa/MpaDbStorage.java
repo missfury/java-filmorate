@@ -2,16 +2,15 @@ package ru.yandex.practicum.filmorate.storage.mpa;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
+import java.util.Collection;
 
 @Slf4j
 @Component
@@ -21,28 +20,22 @@ public class MpaDbStorage implements MpaStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public List<Mpa> getAll() {
+    public Collection<Mpa> getAll() {
         return jdbcTemplate.query(
                 "SELECT * FROM mpa",
                 this::makeMpa);
     }
 
     @Override
-    public Optional<Mpa> getById(int id) {
+    public Mpa getById(int id) {
         String sqlQuery = "SELECT * FROM mpa WHERE id = ?";
-        try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sqlQuery, this::makeMpa, id));
-        } catch (DataAccessException exception) {
-            return Optional.empty();
-        }
-    }
+        SqlRowSet mpaRows = jdbcTemplate.queryForRowSet(sqlQuery, id);
 
-    @Override
-    public boolean checkMpaExist(int id) {
-        SqlRowSet mpaRows = jdbcTemplate.queryForRowSet(
-                "SELECT * FROM mpa WHERE id = ?",
-                id);
-        return mpaRows.next();
+        if (!mpaRows.next()) {
+            throw new NotExistException("Рейтинга с id: " + id + " не существует");
+        }
+
+        return jdbcTemplate.queryForObject(sqlQuery, this::makeMpa, id);
     }
 
     private Mpa makeMpa(ResultSet resultSet, int rowNum) throws SQLException {
