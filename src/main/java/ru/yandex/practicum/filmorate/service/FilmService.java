@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.validate.FilmValidate;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
@@ -18,50 +20,67 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
+    private final GenreStorage genreStorage;
+    private final UserService userService;
+    private final GenreService genreService;
+    private final MpaService mpaService;
 
-    public Collection<Film> getFilms() {
-        return filmStorage.getFilms();
+    public List<Film> getFilms() {
+        List<Film> films = filmStorage.getFilms();
+        return films;
     }
 
     public Film getFilmById(int filmId) {
-        return filmStorage.getFilmById(filmId);
+        return filmStorage.getFilmById(filmId)
+                .orElseThrow(() -> new NotExistException("Фильма с id: " + filmId + " не существует"));
     }
 
     public Film addFilm(Film film) {
         FilmValidate.validate(film);
-        return filmStorage.addFilm(film);
+        if (film.getMpa() != null)
+            mpaService.throwIfMpaNotExist(film.getMpa().getId());
+        if (film.getGenres() != null) {
+            for (Genre genre : film.getGenres()) {
+                genreService.throwIfGenreNotExist(genre.getId());
+            }
+        }
+        int newId = filmStorage.addFilm(film);
+        return filmStorage.getFilmById(newId)
+                .orElseThrow(() -> new NotExistException("Фильма с id: " + newId + " не существует"));
     }
 
     public Film updateFilm(Film film) {
         FilmValidate.validate(film);
-        return filmStorage.updateFilm(film);
+        filmStorage.updateFilm(film);
+        return filmStorage.getFilmById(film.getId())
+                .orElseThrow(() -> new NotExistException("Фильма с id: " + film.getId() + " не существует"));
     }
 
-    public Film deleteFilmById(int filmId) {
+    public void deleteFilmById(int filmId) {
         checkFilmExist(filmId);
-        return filmStorage.deleteFilmById(filmId);
+        filmStorage.deleteFilmById(filmId);
     }
 
     boolean containsLike(int filmId, int userId) {
-        if (filmStorage.getFilmById(filmId).getUsersLikes().contains(userId)) {
+        if (filmStorage.getLikesByFilmId(filmId).contains(userId)) {
             return true;
         }
         return false;
     }
 
-    public Film addLike(int filmId, int userId) {
+    public void addLike(int filmId, int userId) {
         checkFilmExist(filmId);
         if (containsLike(filmId,userId))
             throw new ValidationException("Лайк от пользователя с id: " + userId +
             " уже существует для фильма с id: " + filmId);
-        return filmStorage.addLike(filmId, userId);
+        filmStorage.addLike(filmId, userId);
     }
 
-    public Film deleteLike(int filmId, int userId) {
+    public void deleteLike(int filmId, int userId) {
         checkFilmExist(filmId);
         if (!containsLike(filmId,userId))
             throw new NotExistException("Лайк от пользователя с id: " + userId + " не найден у фильма с id: " + filmId);
-        return filmStorage.removeLike(filmId, userId);
+        filmStorage.removeLike(filmId, userId);
     }
 
     public List<Film> getPopularFilms(int count) {
@@ -74,4 +93,5 @@ public class FilmService {
     private void checkFilmExist(int filmId) {
         filmStorage.getFilmById(filmId);
     }
+
 }

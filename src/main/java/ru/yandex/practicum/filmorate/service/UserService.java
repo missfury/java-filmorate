@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -10,7 +11,6 @@ import ru.yandex.practicum.filmorate.validate.UserValidate;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -18,30 +18,37 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserStorage userStorage;
 
-    public Collection<User> getUsers() {
+    public List<User> getUsers() {
         return userStorage.getUsers();
     }
 
     public User getUserById(Integer userId) {
-        return userStorage.getUserById(userId);
+        return userStorage.getUserById(userId)
+                .orElseThrow(() -> new NotExistException("Пользователя с id: " + userId + " не сушествует"));
     }
 
     public User addUser(User user) {
         UserValidate.validate(user);
-        return userStorage.addUser(user);
+        int newId = userStorage.addUser(user);
+        return userStorage.getUserById(newId)
+                .orElseThrow(() -> new NotExistException("Пользователя с id: " + newId + " не существует"));
     }
 
     public User updateUser(User user) {
         UserValidate.validate(user);
-        return userStorage.updateUser(user);
+        throwIfUserNotExist(List.of(user.getId()));
+        userStorage.updateUser(user);
+        return userStorage.getUserById(user.getId())
+                .orElseThrow(() -> new NotExistException("Пользователя с id: " + user.getId() + " не  существует"));
     }
 
-    public User deleteUserById(int userId) {
-        return userStorage.deleteUserById(userId);
+    public void deleteUserById(int userId) {
+        throwIfUserNotExist(List.of(userId));
+        userStorage.deleteUserById(userId);
     }
 
     boolean containsFriendId(int userId, int friendId) {
-        if (userStorage.getUserById(userId).getFriends().contains(friendId)) {
+        if (userStorage.getFriendsIdByUserId(userId).contains(friendId)) {
             return true;
         }
         return false;
@@ -54,7 +61,7 @@ public class UserService {
             throw new ValidationException("Пользователи с id " + userId + " и " + friendId + " уже друзья");
         userStorage.addFriendship(userId, friendId);
         log.info("Пользователи с id: {} и {} стали друзьями.", userId, friendId);
-        return userStorage.getUserById(userId);
+        return getUserById(userId);
     }
 
     public User deleteFriend(int userId, int friendId) {
@@ -64,23 +71,25 @@ public class UserService {
             throw new ValidationException("Пользователи с id " + userId + " и " + friendId + " не друзья");
         userStorage.removeFriendship(userId, friendId);
         log.info("Пользователи с id: {} и {} больше не друзья.", userId, friendId);
-        return userStorage.getUserById(userId);
+        return getUserById(userId);
     }
 
     public List<User> getUserFriends(int userId) {
-        checkUserExist(List.of(userId));
-        List<User> friends = userStorage.getAllFriends(userId);
-        log.info("Get All friends");
-        return friends;
+        throwIfUserNotExist(List.of(userId));
+        return userStorage.getUsersFriends(userId);
     }
 
     public List<User> getCommonFriends(int firstUserId, int secondUserId) {
-        checkUserExist(List.of(firstUserId,secondUserId));
+        throwIfUserNotExist(List.of(firstUserId, secondUserId));
         checkUsersDifferent(firstUserId, secondUserId);
-        return userStorage.getUserById(firstUserId).getFriends().stream()
-                .filter(friendId -> userStorage.getUserById(secondUserId).getFriends().contains(friendId))
-                .map(userStorage::getUserById)
-                .collect(Collectors.toList());
+        return userStorage.getMutualFriends(firstUserId, secondUserId);
+    }
+
+    public void throwIfUserNotExist(List<Integer> userIdList) {
+        for (Integer userId : userIdList) {
+            if (!userStorage.checkUserExist(userId))
+                throw new NotExistException("Пользователя с id: " + userId + " не существует");
+        }
     }
 
     private void checkUserExist(List<Integer> userIdList) {

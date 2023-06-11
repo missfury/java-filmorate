@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS users(
-                                     id              INTEGER         PRIMARY KEY AUTO_INCREMENT,
-                                     email           VARCHAR         NOT NULL,
+    id              INTEGER         PRIMARY KEY AUTO_INCREMENT,
+    email           VARCHAR         NOT NULL,
     login           VARCHAR         NOT NULL,
     name            VARCHAR         NOT NULL,
     birthday        DATE NOT NULL
@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS mpa(
     );
 
 CREATE TABLE IF NOT EXISTS films(
-                                     id              INTEGER         PRIMARY KEY AUTO_INCREMENT,
-                                     name            VARCHAR         NOT NULL,
+    id              INTEGER         PRIMARY KEY AUTO_INCREMENT,
+    name            VARCHAR         NOT NULL,
     description     VARCHAR         NOT NULL,
     release_date    DATE            NOT NULL,
     duration        INTEGER         NOT NULL,

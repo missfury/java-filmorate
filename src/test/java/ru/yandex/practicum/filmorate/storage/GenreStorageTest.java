@@ -8,11 +8,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -26,7 +28,7 @@ class GenreStorageTest {
 
     @Test
     void getAllGenres() {
-        Collection<Genre> genres = genreStorage.getAll();
+        List<Genre> genres = genreStorage.getAll();
         Assertions.assertThat(genres)
                 .isNotEmpty()
                 .extracting(Genre::getName)
@@ -36,7 +38,8 @@ class GenreStorageTest {
     @ParameterizedTest
     @ValueSource(ints = {1,2,3,4,5,6})
     void getGenreById(int num) {
-        Genre genre = genreStorage.getById(num);
+        Genre genre = genreStorage.getById(num)
+                .orElseThrow(() -> new NotExistException("Такого жанра не существует"));
         String[] arg = new String[]{"Пусто", "Комедия", "Драма", "Мультфильм", "Триллер", "Документальный", "Боевик"};
         assertEquals(num, genre.getId());
         assertEquals(arg[num], genre.getName());

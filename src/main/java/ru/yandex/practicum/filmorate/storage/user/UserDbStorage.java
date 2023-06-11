@@ -2,12 +2,12 @@ package ru.yandex.practicum.filmorate.storage.user;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -25,27 +25,24 @@ public class UserDbStorage implements UserStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public Collection<User> getUsers() {
+    public List<User> getUsers() {
         return jdbcTemplate.query(
                 "SELECT * FROM users",
                 this::makeUser);
     }
 
     @Override
-    public User getUserById(int userId) {
-        SqlRowSet userRows = jdbcTemplate.queryForRowSet(
-                "SELECT * FROM users WHERE id = ?",
-                userId);
-        if (!userRows.next())
-            throw new NotExistException("Пользователя с id: " + userId + " не существует");
-        return jdbcTemplate.queryForObject(
-                "SELECT * FROM users WHERE id = ?",
-                this::makeUser,
-                userId);
+    public Optional<User> getUserById(int userId) {
+        String sqlQuery = "SELECT * FROM users WHERE id = ?";
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sqlQuery, this::makeUser, userId));
+        } catch (DataAccessException exception) {
+            return Optional.empty();
+        }
     }
 
     @Override
-    public User addUser(User user) {
+    public int addUser(User user) {
         KeyHolder generatedId = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             final PreparedStatement stmt = connection.prepareStatement(
@@ -59,12 +56,11 @@ public class UserDbStorage implements UserStorage {
         }, generatedId);
         user.setId(Objects.requireNonNull(generatedId.getKey()).intValue());
         log.info("Пользователь с id: {} создан", user.getId());
-        return user;
+        return user.getId();
     }
 
     @Override
-    public User updateUser(User user) {
-        getUserById(user.getId());
+    public void updateUser(User user) {
         jdbcTemplate.update(
                 "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE id = ? ",
                 user.getEmail(),
@@ -73,17 +69,14 @@ public class UserDbStorage implements UserStorage {
                 user.getBirthday(),
                 user.getId());
         log.info("Информация о пользователе с id: {} изменена", user.getId());
-        return user;
     }
 
     @Override
-    public User deleteUserById(int userId) {
-        User user = getUserById(userId);
+    public void deleteUserById(int userId) {
         jdbcTemplate.update(
                 "DELETE FROM users WHERE id = ?",
                 userId);
         log.info("Пользователь с id: {} удален", userId);
-        return user;
     }
 
     @Override
@@ -140,20 +133,28 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public List<User> getAllFriends(int userId) {
-        String sqlQuery = "SELECT * FROM users WHERE id IN " +
-                "(SELECT friend_id AS id FROM friens WHERE user_id = ?)";
-        SqlRowSet rs = jdbcTemplate.queryForRowSet(sqlQuery, userId);
-        List<User> friends = new ArrayList<>();
-        while (rs.next()) {
-            friends.add(new User(rs.getInt("id"),
-                    rs.getString("name"),
-                    rs.getString("login"),
-                    rs.getString("email"),
-                    Objects.requireNonNull(rs.getDate("birthday")).toLocalDate()));
-        }
-        return friends;
+    public List<User> getUsersFriends(int id) {
+        String sqlQuery = "SELECT U.ID, U.EMAIL, U.LOGIN, U.NAME, U.BIRTHDAY " +
+                "FROM friends F, users U WHERE F.USER_ID = ? AND U.ID = F.FRIEND_ID";
+        return jdbcTemplate.query(sqlQuery, this::makeUser, id);
     }
+
+    @Override
+    public List<User> getMutualFriends(int id, int otherId) {
+        String sqlQuery = "SELECT U.ID, U.EMAIL, U.LOGIN, U.NAME, U.BIRTHDAY " +
+                "FROM friends AS F JOIN users AS U ON U.ID = F.FRIEND_ID WHERE F.USER_ID = ? AND F.FRIEND_ID " +
+                "IN (SELECT FRIEND_ID FROM friends WHERE USER_ID = ?)";
+        return jdbcTemplate.query(sqlQuery, this::makeUser, id, otherId);
+    }
+
+    @Override
+    public boolean checkUserExist(int userId) {
+        SqlRowSet userRows = jdbcTemplate.queryForRowSet(
+                "SELECT * FROM users WHERE id = ?",
+                userId);
+        return userRows.next();
+    }
+
 
     public List<Integer> getFriendsIdByUserId(int userId) {
         return jdbcTemplate.queryForList(
@@ -171,4 +172,5 @@ public class UserDbStorage implements UserStorage {
         Set<Integer> friends = new HashSet<>(getFriendsIdByUserId(id));
         return new User(id, email, login, name, birthday, friends);
     }
+
 }
