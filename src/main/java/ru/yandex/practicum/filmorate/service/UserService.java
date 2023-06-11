@@ -55,7 +55,7 @@ public class UserService {
 
     public User addFriend(int userId, int friendId) {
         checkUsersDifferent(userId, friendId);
-        checkUserExist(List.of(userId,friendId));
+        throwIfUserNotExist(List.of(userId, friendId));
         if (containsFriendId(userId,friendId))
             throw new ValidationException("Пользователи с id " + userId + " и " + friendId + " уже друзья");
         userStorage.addFriendship(userId, friendId);
@@ -65,7 +65,7 @@ public class UserService {
 
     public User deleteFriend(int userId, int friendId) {
         checkUsersDifferent(userId, friendId);
-        checkUserExist(List.of(userId,friendId));
+        throwIfUserNotExist(List.of(userId, friendId));
         if (!containsFriendId(userId,friendId))
             throw new ValidationException("Пользователи с id " + userId + " и " + friendId + " не друзья");
         userStorage.removeFriendship(userId, friendId);
@@ -88,12 +88,6 @@ public class UserService {
         for (Integer userId : userIdList) {
             if (!userStorage.checkUserExist(userId))
                 throw new NotExistException("Пользователя с id: " + userId + " не существует");
-        }
-    }
-
-    private void checkUserExist(List<Integer> userIdList) {
-        for (Integer userId : userIdList) {
-            userStorage.getUserById(userId);
         }
     }
 
