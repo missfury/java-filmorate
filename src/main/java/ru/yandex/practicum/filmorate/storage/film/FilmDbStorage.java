@@ -124,7 +124,7 @@ public class FilmDbStorage implements FilmStorage {
         return getFilmById(filmId);
     }
 
-    private void addGenresToFilm(Film film){
+    private void addGenresToFilm(Film film) {
         for (Genre genre : film.getGenres()) {
             SqlRowSet genreRows = jdbcTemplate.queryForRowSet(
                     "SELECT * FROM films_genre WHERE film_id = ? AND genre_id = ?",
