@@ -12,7 +12,6 @@ import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
