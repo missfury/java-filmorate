@@ -24,6 +24,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
+
     @Override
     public Collection<Film> getFilms() {
         return jdbcTemplate.query(
@@ -110,8 +111,6 @@ public class FilmDbStorage implements FilmStorage {
                 userId);
         return getFilmById(filmId);
     }
-
-
 
     private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
         final int id = resultSet.getInt("id");
