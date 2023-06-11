@@ -139,7 +139,23 @@ public class UserDbStorage implements UserStorage {
         }
     }
 
-    private List<Integer> getFriendsIdByUserId(int userId) {
+    @Override
+    public List<User> getAllFriends(int userId) {
+        String sqlQuery = "SELECT * FROM users WHERE id IN " +
+                "(SELECT friend_id AS id FROM friens WHERE user_id = ?)";
+        SqlRowSet rs = jdbcTemplate.queryForRowSet(sqlQuery, userId);
+        List<User> friends = new ArrayList<>();
+        while (rs.next()) {
+            friends.add(new User(rs.getInt("id"),
+                    rs.getString("name"),
+                    rs.getString("login"),
+                    rs.getString("email"),
+                    Objects.requireNonNull(rs.getDate("birthday")).toLocalDate()));
+        }
+        return friends;
+    }
+
+    public List<Integer> getFriendsIdByUserId(int userId) {
         return jdbcTemplate.queryForList(
                 "SELECT friend_id FROM friends WHERE user_id  = ?",
                 Integer.class,

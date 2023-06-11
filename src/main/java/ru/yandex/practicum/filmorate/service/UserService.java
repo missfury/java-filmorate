@@ -40,10 +40,17 @@ public class UserService {
         return userStorage.deleteUserById(userId);
     }
 
+    boolean containsFriendId(int userId, int friendId){
+        if (userStorage.getUserById(userId).getFriends().contains(friendId)) {
+            return true;
+        }
+        return false;
+    }
+
     public User addFriend(int userId, int friendId) {
         checkUsersDifferent(userId, friendId);
         checkUserExist(List.of(userId,friendId));
-        if (userStorage.getUserById(userId).getFriends().contains(friendId))
+        if (containsFriendId(userId,friendId))
             throw new ValidationException("Пользователи с id " + userId + " и " + friendId + " уже друзья");
         userStorage.addFriendship(userId, friendId);
         log.info("Пользователи с id: {} и {} стали друзьями.", userId, friendId);
@@ -53,7 +60,7 @@ public class UserService {
     public User deleteFriend(int userId, int friendId) {
         checkUsersDifferent(userId, friendId);
         checkUserExist(List.of(userId,friendId));
-        if (!userStorage.getUserById(userId).getFriends().contains(friendId))
+        if (!containsFriendId(userId,friendId))
             throw new ValidationException("Пользователи с id " + userId + " и " + friendId + " не друзья");
         userStorage.removeFriendship(userId, friendId);
         log.info("Пользователи с id: {} и {} больше не друзья.", userId, friendId);
@@ -62,9 +69,9 @@ public class UserService {
 
     public List<User> getUserFriends(int userId) {
         checkUserExist(List.of(userId));
-        return userStorage.getUserById(userId).getFriends().stream()
-                .map(userStorage::getUserById)
-                .collect(Collectors.toList());
+        List<User> friends = userStorage.getAllFriends(userId);
+        log.info("Get All friends");
+        return friends;
     }
 
     public List<User> getCommonFriends(int firstUserId, int secondUserId) {

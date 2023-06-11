@@ -11,7 +11,6 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,4 +26,12 @@ public class User {
     @NotNull(message = "Укажите дату рождения")
     private LocalDate birthday;
     private Set<Integer> friends;
+
+    public User(int id, String name, String login, String email, LocalDate birthday) {
+        this.id = id;
+        this.login = login;
+        this.name = name;
+        this.email = email;
+        this.birthday = birthday;
+    }
 }

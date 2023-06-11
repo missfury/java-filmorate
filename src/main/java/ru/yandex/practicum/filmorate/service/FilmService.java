@@ -42,9 +42,16 @@ public class FilmService {
         return filmStorage.deleteFilmById(filmId);
     }
 
+    boolean containsLike(int filmId, int userId) {
+        if (filmStorage.getFilmById(filmId).getUsersLikes().contains(userId)) {
+            return true;
+        }
+        return false;
+    }
+
     public Film addLike(int filmId, int userId) {
         checkFilmExist(filmId);
-        if (filmStorage.getFilmById(filmId).getUsersLikes().contains(userId))
+        if (containsLike(filmId,userId))
             throw new ValidationException("Лайк от пользователя с id: " + userId +
             " уже существует для фильма с id: " + filmId);
         return filmStorage.addLike(filmId, userId);
@@ -52,7 +59,7 @@ public class FilmService {
 
     public Film deleteLike(int filmId, int userId) {
         checkFilmExist(filmId);
-        if (!filmStorage.getFilmById(filmId).getUsersLikes().contains(userId))
+        if (!containsLike(filmId,userId))
             throw new NotExistException("Лайк от пользователя с id: " + userId + " не найден у фильма с id: " + filmId);
         return filmStorage.removeLike(filmId, userId);
     }
