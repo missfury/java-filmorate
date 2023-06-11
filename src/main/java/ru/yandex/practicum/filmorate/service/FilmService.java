@@ -107,7 +107,7 @@ public class FilmService {
     }
 
     private void loadInformationFilms(List<Film> films) {
-        if (films.isEmpty()) { //Если фильмов нет, то не обращаемся за получением доп. информации
+        if (films.isEmpty()) {
             log.info("filmStorage getRecommendation not exist");
             return;
         }
