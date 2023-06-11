@@ -19,8 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
+
 class MpaStorageTest {
     private final MpaStorage mpaStorage;
+
     @Test
     void getAllMpa() {
         Collection<Mpa> mpaRatings = mpaStorage.getAll();
