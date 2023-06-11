@@ -24,24 +24,11 @@ import java.util.*;
 public class UserDbStorage implements UserStorage {
     private final JdbcTemplate jdbcTemplate;
 
-    private User makeObjectUser(ResultSet resultSet) throws SQLException {
-        return User.builder()
-                .id(resultSet.getInt("id"))
-                .email(resultSet.getString("email"))
-                .login(resultSet.getString("login"))
-                .name(resultSet.getString("name"))
-                .birthday(resultSet.getTimestamp("birthday").toLocalDateTime().toLocalDate())
-                .friends(new HashSet<>())
-                .build();
-    }
-
     @Override
     public List<User> getUsers() {
         return jdbcTemplate.query(
-                "SELECT  ID, EMAIL, LOGIN, " +
-                        "    NAME, BIRTHDAY, " +
-                        "FROM USERS ",
-                (rs, rowNum) -> makeObjectUser(rs));
+                "SELECT * FROM users",
+                this::makeUser);
     }
 
     @Override
