@@ -22,8 +22,8 @@ import java.util.*;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class FilmDbStorage implements FilmStorage {
 
+public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -65,6 +65,8 @@ public class FilmDbStorage implements FilmStorage {
         if (film.getGenres() != null) {
             addGenresToFilm(film);
         }
+        film.setMpa(getMpaById(film.getMpa().getId()));
+        film.setGenres(getGenresByFilmId(film.getId()));
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
@@ -88,6 +90,8 @@ public class FilmDbStorage implements FilmStorage {
                 film.getDuration(),
                 film.getMpa().getId(),
                 film.getId());
+        film.setMpa(getMpaById(film.getMpa().getId()));
+        film.setGenres(getGenresByFilmId(film.getId()));
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }
@@ -120,7 +124,7 @@ public class FilmDbStorage implements FilmStorage {
         return getFilmById(filmId);
     }
 
-    private void addGenresToFilm(Film film) {
+    private void addGenresToFilm(Film film){
         for (Genre genre : film.getGenres()) {
             SqlRowSet genreRows = jdbcTemplate.queryForRowSet(
                     "SELECT * FROM films_genre WHERE film_id = ? AND genre_id = ?",
