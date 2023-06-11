@@ -8,6 +8,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -75,10 +76,11 @@ public class FilmDbStorage implements FilmStorage {
             return stmt;
         }, generatedId);
         film.setId(Objects.requireNonNull(generatedId.getKey()).intValue());
-
         if (film.getGenres() != null) {
             addGenresToFilm(film);
         }
+        film.setMpa(getMpaById(film.getMpa().getId()));
+        film.setGenres(getGenresByFilmId(film.getId()));
         log.info("Фильм с id: {} создан", film.getId());
         return film.getId();
 
@@ -94,7 +96,7 @@ public class FilmDbStorage implements FilmStorage {
             addGenresToFilm(film);
         }
 
-        jdbcTemplate.update(
+        int row = jdbcTemplate.update(
                 "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, " +
                     "rating = ? WHERE id = ?",
                 film.getName(),
@@ -103,6 +105,11 @@ public class FilmDbStorage implements FilmStorage {
                 film.getDuration(),
                 film.getMpa().getId(),
                 film.getId());
+        if (row != 1) {
+            throw new NotExistException("Фильма с id: " + film.getId() + " не существует");
+        }
+        film.setMpa(getMpaById(film.getMpa().getId()));
+        film.setGenres(getGenresByFilmId(film.getId()));
         log.info("Фильм с id: {} изменен", film.getId());
     }
 
