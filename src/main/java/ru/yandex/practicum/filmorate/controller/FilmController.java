@@ -15,7 +15,7 @@ public class FilmController {
     private final FilmService filmService;
 
     @GetMapping
-    public Collection<Film> getFilms() {
+    public List<Film> getFilms() {
         return filmService.getFilms();
     }
 
@@ -49,8 +49,10 @@ public class FilmController {
         filmService.deleteLike(id, userId);
     }
 
-    @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10", required = false) Integer count) {
-        return filmService.getPopularFilms(count);
+    public List<Film> getPopularFilms(
+            @RequestParam(name = "count", defaultValue = "10", required = false) Integer limit,
+            @RequestParam(required = false) Integer genreId,
+            @RequestParam(required = false) Integer year) {
+        return filmService.getPopularFilms(limit, genreId, year);
     }
 }

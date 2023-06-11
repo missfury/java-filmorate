@@ -26,6 +26,7 @@ import java.util.*;
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
 
+
     private Film makeObjectFilm(ResultSet resultSet) throws SQLException {
         return Film.builder()
                 .id(resultSet.getInt("id"))
@@ -152,6 +153,27 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 
+    @Override
+    public List<Film> getPopular(Integer limit, String condition) {
+        String sql = "SELECT f.id, " +
+                "F.name, " +
+                "description, " +
+                "release_date, " +
+                "duration, " +
+                "f.rating_mpa, " +
+                "m.name mpa_name " +
+                "FROM FILMS F " +
+                "LEFT JOIN MPA M on M.ID = F.RATING_MPA " +
+                "LEFT JOIN films_genre AS fg ON f.id = fg.film_id " +
+                "LEFT JOIN films_like AS fl ON f.id = fl.film_id " +
+                condition +
+                "GROUP BY f.id, f.name,f.description, f.release_date, f.duration, f.rating_mpa " +
+                "ORDER BY COUNT(fl.user_id) DESC " +
+                "LIMIT ?";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> makeObjectFilm(rs), limit);
+    }
+
     private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
         final int id = resultSet.getInt("id");
         final String name = resultSet.getString("name");
@@ -195,12 +217,5 @@ public class FilmDbStorage implements FilmStorage {
         return new Mpa(id, name);
     }
 
-    @Override
-    public boolean checkFilmExist(int filmId) {
-        SqlRowSet filmRows = jdbcTemplate.queryForRowSet(
-                "SELECT * FROM films WHERE id = ?",
-                filmId);
-        return filmRows.next();
-    }
 
 }

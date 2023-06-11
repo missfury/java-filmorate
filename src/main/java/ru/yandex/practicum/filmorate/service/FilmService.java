@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.validate.FilmValidate;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
@@ -20,6 +21,7 @@ public class FilmService {
     private final FilmStorage filmStorage;
     private final GenreService genreService;
     private final MpaService mpaService;
+    private final GenreStorage genreStorage;
 
     public List<Film> getFilms() {
         List<Film> films = filmStorage.getFilms();
@@ -79,15 +81,39 @@ public class FilmService {
         filmStorage.removeLike(filmId, userId);
     }
 
-    public List<Film> getPopularFilms(int count) {
-        return filmStorage.getFilms().stream()
-                .sorted((o1, o2) -> Integer.compare(o2.getUsersLikes().size(), o1.getUsersLikes().size()))
-                .limit(count)
-                .collect(Collectors.toList());
+    public List<Film> getPopularFilms(Integer limit, Integer genreId, Integer year) {
+        StringBuilder condition = new StringBuilder();
+        List<Film> films;
+
+        if (genreId == null && year == null) {
+            films = filmStorage.getPopular(limit, String.valueOf(condition));
+        } else if (year == null) {
+            condition.append("WHERE fg.genre_id = ").append(genreId);
+            films = filmStorage.getPopular(limit, String.valueOf(condition));
+        } else if (genreId == null) {
+            condition.append("WHERE YEAR(f.release_date) = ").append(year);
+            films = filmStorage.getPopular(limit, String.valueOf(condition));
+        } else {
+            condition.append("WHERE fg.genre_id = ").append(genreId)
+                    .append("AND YEAR(f.release_date) = ").append(year);
+            films = filmStorage.getPopular(limit, String.valueOf(condition));
+        }
+        loadInformationFilms(films);
+        return films;
     }
+
 
     private void checkFilmExist(int filmId) {
         filmStorage.getFilmById(filmId);
+    }
+
+    private void loadInformationFilms(List<Film> films) {
+        if (films.isEmpty()) { //Если фильмов нет, то не обращаемся за получением доп. информации
+            log.info("filmStorage getRecommendation not exist");
+            return;
+        }
+        log.info("filmStorage find all Films. films.size()  {}", films.size());
+        genreStorage.loadFilmsGenres(films);
     }
 
 }

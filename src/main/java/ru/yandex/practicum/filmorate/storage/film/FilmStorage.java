@@ -21,7 +21,7 @@ public interface FilmStorage {
 
     void removeLike(int filmId, int userId);
 
-    boolean checkFilmExist(int filmId);
+    List<Film> getPopular(Integer limit, String condition);
 
     List<Integer> getLikesByFilmId(int filmId);
 

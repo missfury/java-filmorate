@@ -32,5 +32,9 @@ public class Film {
     private Mpa mpa;
     private List<Genre> genres;
 
+    public void addGenre(Genre genre) {
+        genres.add(genre);
+    }
+
 }
 
