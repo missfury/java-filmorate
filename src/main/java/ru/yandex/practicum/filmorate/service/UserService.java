@@ -40,7 +40,7 @@ public class UserService {
         return userStorage.deleteUserById(userId);
     }
 
-    boolean containsFriendId(int userId, int friendId){
+    boolean containsFriendId(int userId, int friendId) {
         if (userStorage.getUserById(userId).getFriends().contains(friendId)) {
             return true;
         }
