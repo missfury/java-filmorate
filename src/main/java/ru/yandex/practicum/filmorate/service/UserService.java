@@ -47,10 +47,7 @@ public class UserService {
     }
 
     boolean containsFriendId(int userId, int friendId) {
-        if (userStorage.getFriendsIdByUserId(userId).contains(friendId)) {
-            return true;
-        }
-        return false;
+        return userStorage.getFriendsIdByUserId(userId).contains(friendId);
     }
 
     public User addFriend(int userId, int friendId) {
