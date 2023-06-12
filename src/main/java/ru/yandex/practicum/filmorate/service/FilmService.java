@@ -44,10 +44,7 @@ public class FilmService {
     }
 
     boolean containsLike(int filmId, int userId) {
-        if (filmStorage.getFilmById(filmId).getUsersLikes().contains(userId)) {
-            return true;
-        }
-        return false;
+        return filmStorage.getFilmById(filmId).getUsersLikes().contains(userId);
     }
 
     public Film addLike(int filmId, int userId) {

@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -18,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -63,7 +65,7 @@ public class FilmDbStorage implements FilmStorage {
         film.setId(Objects.requireNonNull(generatedId.getKey()).intValue());
 
         if (film.getGenres() != null) {
-            addGenresToFilm(film);
+            addGenresToFilm(film.getGenres(), film.getId());
         }
         film.setMpa(getMpaById(film.getMpa().getId()));
         film.setGenres(getGenresByFilmId(film.getId()));
@@ -78,7 +80,7 @@ public class FilmDbStorage implements FilmStorage {
             jdbcTemplate.update(
                     "DELETE FROM films_genre WHERE film_id = ?",
                     film.getId());
-            addGenresToFilm(film);
+            addGenresToFilm(film.getGenres(), film.getId());
         }
 
         jdbcTemplate.update(
@@ -124,20 +126,31 @@ public class FilmDbStorage implements FilmStorage {
         return getFilmById(filmId);
     }
 
-    private void addGenresToFilm(Film film) {
-        for (Genre genre : film.getGenres()) {
-            SqlRowSet genreRows = jdbcTemplate.queryForRowSet(
-                    "SELECT * FROM films_genre WHERE film_id = ? AND genre_id = ?",
-                    film.getId(),
-                    genre.getId());
-            if (!genreRows.next()) {
-                jdbcTemplate.update(
-                        "INSERT INTO films_genre (film_id, genre_id) VALUES (?,?)",
-                        film.getId(),
-                        genre.getId());
-            }
+    private void addGenresToFilm(List<Genre> genres, int filmId) {
+        if (genres == null) {
+            return;
         }
-    }
+        List<Integer> genreIds = genres.stream()
+                .map(Genre::getId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        String sqlQuery = "INSERT INTO FILM_GENRES VALUES(?, ?)";
+        jdbcTemplate.batchUpdate(
+                sqlQuery,
+                new BatchPreparedStatementSetter() {
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        int genreId = genreIds.get(i);
+                        ps.setInt(1, filmId);
+                        ps.setInt(2, genreId);
+                    }
+
+                    public int getBatchSize() {
+                        return genreIds.size();
+                    }
+                });
+        }
+
 
     private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
         final int id = resultSet.getInt("id");
