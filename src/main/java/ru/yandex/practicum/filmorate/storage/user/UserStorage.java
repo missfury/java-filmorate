@@ -21,6 +21,8 @@ public interface UserStorage {
 
     void removeFriendship(int userId, int friendId);
 
+    public List<User> getAllUsers();
+
     List<User> getUsersFriends(int id);
 
     List<User> getMutualFriends(int id, int otherId);

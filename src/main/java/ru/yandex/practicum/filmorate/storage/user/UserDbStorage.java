@@ -133,9 +133,17 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
+    public List<User> getAllUsers() {
+        String sqlQuery = "SELECT * FROM users";
+        return jdbcTemplate.query(sqlQuery, this::makeUser);
+    }
+
+    @Override
     public List<User> getUsersFriends(int id) {
-        String sqlQuery = "SELECT U.ID, U.EMAIL, U.LOGIN, U.NAME, U.BIRTHDAY " +
-                "FROM friends F, users U WHERE F.USER_ID = ? AND U.ID = F.FRIEND_ID";
+        String sqlQuery = "SELECT * " +
+                "FROM users AS u " +
+                "LEFT OUTER JOIN friends AS f ON u.id = f.friend_id " +
+                "WHERE f.user_id = ?";
         return jdbcTemplate.query(sqlQuery, this::makeUser, id);
     }
 
@@ -160,7 +168,6 @@ public class UserDbStorage implements UserStorage {
         return userRows.next();
     }
 
-
     public List<Integer> getFriendsIdByUserId(int userId) {
         return jdbcTemplate.queryForList(
                 "SELECT friend_id FROM friends WHERE user_id  = ?",
@@ -169,13 +176,14 @@ public class UserDbStorage implements UserStorage {
     }
 
     private User makeUser(ResultSet resultSet, int rowNum) throws SQLException {
-        int id = resultSet.getInt("id");
-        String email = resultSet.getString("email");
-        String login = resultSet.getString("login");
-        String name = resultSet.getString("name");
-        LocalDate birthday = resultSet.getDate("birthday").toLocalDate();
-        Set<Integer> friends = new HashSet<>(getFriendsIdByUserId(id));
-        return new User(id, email, login, name, birthday, friends);
+        return User.builder()
+                .id(resultSet.getInt("id"))
+                .email(resultSet.getString("email"))
+                .login(resultSet.getString("login"))
+                .email(resultSet.getString("email"))
+                .name(resultSet.getString("name"))
+                .birthday(resultSet.getTimestamp("birthday").toLocalDateTime().toLocalDate())
+                .build();
     }
 
 }
