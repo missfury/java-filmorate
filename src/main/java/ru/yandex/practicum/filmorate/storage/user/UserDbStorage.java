@@ -81,12 +81,12 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriendship(int userId, int friendId) {
-        SqlRowSet userRows = jdbcTemplate.queryForRowSet(
+        SqlRowSet checkFriendship = jdbcTemplate.queryForRowSet(
                 "SELECT * FROM friends WHERE user_id = ? AND friend_id = ?",
                 friendId,
                 userId);
         String sqlRequestAddFriend = "INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, ?)";
-        if (userRows.first()) {
+        if (checkFriendship.next()) {
             jdbcTemplate.update(
                     sqlRequestAddFriend,
                     userId,
@@ -141,9 +141,14 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public List<User> getMutualFriends(int id, int otherId) {
-        String sqlQuery = "SELECT U.ID, U.EMAIL, U.LOGIN, U.NAME, U.BIRTHDAY " +
-                "FROM friends AS F JOIN users AS U ON U.ID = F.FRIEND_ID WHERE F.USER_ID = ? AND F.FRIEND_ID " +
-                "IN (SELECT FRIEND_ID FROM friends WHERE USER_ID = ?)";
+        String sqlQuery = "SELECT * FROM users AS u " +
+                "LEFT OUTER JOIN friends AS f ON u.id = f.friend_id " +
+                "WHERE f.user_id = ? " +
+                "AND f.friend_id IN (" +
+                "SELECT friend_id " +
+                "FROM friends AS f " +
+                "LEFT OUTER JOIN users AS u ON u.id = f.friend_id " +
+                "WHERE f.user_id = ?)";
         return jdbcTemplate.query(sqlQuery, this::makeUser, id, otherId);
     }
 
