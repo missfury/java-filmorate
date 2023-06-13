@@ -62,9 +62,6 @@ public class FilmService {
     public Film deleteLike(int filmId, int userId) {
         filmStorage.checkFilm(filmId);
         userStorage.checkUser(userId);
-        if (!filmStorage.getFilmById(filmId).getUsersLikes().contains(userId)) {
-            throw new NotExistException("Пользователь не найден");
-        }
         return filmStorage.removeLike(filmId, userId);
     }
 
