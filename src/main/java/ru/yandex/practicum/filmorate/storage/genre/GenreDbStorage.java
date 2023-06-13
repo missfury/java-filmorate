@@ -20,37 +20,30 @@ public class GenreDbStorage implements GenreStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public Optional<Genre> getById(int filmId) {
+    public Genre getById(int filmId) {
         String sqlQuery = "SELECT * FROM GENRE WHERE ID = ?";
-        try {
-            return jdbcTemplate.queryForObject(sqlQuery, this::makeGenre, filmId);
-        } catch (DataAccessException exception) {
-            return Optional.empty();
-        }
+        return jdbcTemplate.queryForObject(sqlQuery, this::makeGenre, filmId);
     }
 
     @Override
-    public List<Optional<Genre>> getAll() {
+    public List <Genre> getAll() {
         String sqlQuery = "SELECT * FROM GENRE ORDER BY ID";
         return jdbcTemplate.query(sqlQuery, this::makeGenre);
     }
 
     @Override
-    public List<Optional<Genre>> getAllByIdFilm(int filmId) {
-        String sqlQuery = "SELECT FG.GENRE_ID AS genre_id, G.NAME AS name " +
-                "FROM FILMS_GENRE AS FG JOIN GENRE AS G ON FG.GENRE_ID = G.ID " +
-                "WHERE FG.FILM_ID = ?";
-        try {
-            return jdbcTemplate.query(sqlQuery, this::makeGenre, filmId);
-        } catch (DataAccessException exception) {
-            return List.of(Optional.empty());
-        }
+    public List<Genre> getAllByIdFilm(int filmId) {
+        String sqlQuery = "SELECT g.id, name " +
+                "FROM genre AS g " +
+                "JOIN films_genre AS fg ON g.id = fg.genre_id " +
+                "WHERE film_id = ?";
+        return jdbcTemplate.query(sqlQuery, this::makeGenre, filmId);
     }
 
-    private Optional<Genre> makeGenre(ResultSet resultSet, int rowNum) throws SQLException {
-        return Optional.ofNullable(Genre.builder()
+    private Genre makeGenre(ResultSet resultSet, int rowNum) throws SQLException {
+        return Genre.builder()
                 .id(resultSet.getInt("id"))
                 .name(resultSet.getString("name"))
-                .build());
+                .build();
     }
 }

@@ -18,11 +18,10 @@ public class GenreService {
     private final GenreStorage genreStorage;
 
     public Genre getGenreById(int id) {
-        return genreStorage.getById(id).orElseThrow(() -> new NotExistException(String.format("genre id%s", id)));
+        return genreStorage.getById(id);
     }
 
     public List<Genre> getAllGenres() {
-        List<Optional<Genre>> optGenre = genreStorage.getAll();
-        return optGenre.stream().flatMap(Optional::stream).collect(Collectors.toList());
+        return genreStorage.getAll();
     }
 }
