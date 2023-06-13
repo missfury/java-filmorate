@@ -64,7 +64,7 @@ public class FilmDbStorage implements FilmStorage {
         }, generatedId);
         int filmId = Objects.requireNonNull(generatedId.getKey()).intValue();
         film.setId(filmId);
-        addGenresToFilm(film.getGenres(), film.getId());
+        addGenresToFilm(film);
         film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} создан", film.getId());
         return film;
@@ -82,7 +82,7 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 filmId);
         film.setId(filmId);
-        addGenresToFilm(film.getGenres(), filmId);
+        addGenresToFilm(film);
         film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
@@ -100,29 +100,26 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sqlQuery, filmId, userId);
     }
 
-    private void addGenresToFilm(List<Genre> genres, int filmId) {
-        if (genres == null) {
-            return;
+    private void addGenresToFilm(Film film) {
+        String sqlQueryRemove = "DELETE FROM films_genre " +
+                "WHERE film_id = ?";
+        if (film.getGenres() != null) {
+            jdbcTemplate.update(sqlQueryRemove, film.getId());
+
+            List<Integer> genresIds = film.getGenres().stream()
+                    .map(Genre::getId)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            for (Integer genreId : genresIds) {
+                jdbcTemplate.update("INSERT INTO films_genre(film_id, genre_id) " +
+                        "VALUES(?,?)", film.getId(), genreId);
+            }
         }
-        List<Integer> genreIds = genres.stream()
-                .map(Genre::getId)
-                .distinct()
-                .collect(Collectors.toList());
 
-        String sqlQuery = "INSERT INTO FILMS_GENRE VALUES(?, ?)";
-        jdbcTemplate.batchUpdate(
-                sqlQuery,
-                new BatchPreparedStatementSetter() {
-                    public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        int genreId = genreIds.get(i);
-                        ps.setInt(1, filmId);
-                        ps.setInt(2, genreId);
-                    }
-
-                    public int getBatchSize() {
-                        return genreIds.size();
-                    }
-                });
+        if (film.getGenres() != null && film.getGenres().isEmpty()) {
+            jdbcTemplate.update(sqlQueryRemove, film.getId());
+        }
         }
 
     @Override
