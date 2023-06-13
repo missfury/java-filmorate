@@ -2,11 +2,11 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -37,21 +37,21 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getFilms() {
-        String sqlQuery = "SELECT * FROM films";
+        String sqlQuery = "SELECT * " +
+                "FROM films AS f " +
+                "JOIN mpa AS m ON f.rating = m.id";
         return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
 
     @Override
     public Film getFilmById(int filmId) {
-        SqlRowSet userRows = jdbcTemplate.queryForRowSet(
-                "SELECT * FROM films WHERE id = ?",
-                filmId);
-        if (!userRows.next())
-            throw new NotExistException("Film with id: " + filmId + " does not exist");
-        return jdbcTemplate.queryForObject(
-                "SELECT * FROM films WHERE id = ?",
-                this::makeFilm,
-                filmId);
+        try {
+            return jdbcTemplate.queryForObject("SELECT * " +
+                    "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
+                    "WHERE f.id = ?", this::makeFilm, filmId);
+        } catch (DataAccessException exception) {
+            return null;
+        }
     }
 
     @Override
