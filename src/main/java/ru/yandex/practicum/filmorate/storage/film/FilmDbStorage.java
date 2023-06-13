@@ -2,18 +2,17 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
-import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -29,7 +28,6 @@ import java.util.stream.Collectors;
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
     private final GenreStorage genreStorage;
-    private final MpaStorage mpaStorage;
 
     @Override
     public List<Film> getFilms() {
@@ -39,12 +37,15 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film getFilmById(int filmId) {
-        String sqlQuery = "SELECT * FROM FILM F, MPA M WHERE F.ID = ? AND F.RATING = M.ID";
-        try {
-            return jdbcTemplate.queryForObject(sqlQuery, this::makeFilm, filmId);
-        } catch (DataAccessException exception) {
-            return null;
-        }
+        SqlRowSet userRows = jdbcTemplate.queryForRowSet(
+                "SELECT * FROM films WHERE id = ?",
+                filmId);
+        if (!userRows.next())
+            throw new NotExistException("Film with id: " + filmId + " does not exist");
+        return jdbcTemplate.queryForObject(
+                "SELECT * FROM films WHERE id = ?",
+                this::makeFilm,
+                filmId);
     }
 
     @Override
