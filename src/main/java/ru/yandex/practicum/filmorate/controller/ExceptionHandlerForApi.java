@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import com.sun.jdi.InternalException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -10,7 +11,9 @@ import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 
 import java.util.Map;
 
-@RestControllerAdvice
+@Slf4j
+@RestControllerAdvice(assignableTypes = {FilmController.class, UserController.class,
+        MpaController.class, GenreController.class})
 public class ExceptionHandlerForApi {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
