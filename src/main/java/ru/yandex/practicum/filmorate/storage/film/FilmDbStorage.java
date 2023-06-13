@@ -33,9 +33,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getFilms() {
-        String sqlQuery = "SELECT * " +
-                "FROM films AS f " +
-                "JOIN mpa AS m ON f.rating = m.id";
+        String sqlQuery = "SELECT * FROM films";
         return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
 
@@ -76,7 +74,6 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film updateFilm(Film film, int filmId) {
-        getFilmById(film.getId());
         if (film.getGenres() != null) {
             jdbcTemplate.update(
                     "DELETE FROM films_genre WHERE film_id = ?",
