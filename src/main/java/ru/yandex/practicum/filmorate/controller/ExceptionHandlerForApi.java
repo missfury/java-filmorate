@@ -23,8 +23,10 @@ public class ExceptionHandlerForApi {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handlerNotFoundException(final NotExistException e) {
-        return Map.of("Not found", e.getMessage());
+    public ErrorResponse handlerNotFound(final NotExistException e) {
+        log.error("Объект не найден {}", e.getMessage());
+        return new ErrorResponse("NOT FOUND", e.getMessage());
+
     }
 
     @ExceptionHandler
