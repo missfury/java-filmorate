@@ -47,7 +47,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Optional<Film> addFilm(Film film) {
+    public Film addFilm(Film film) {
         KeyHolder generatedId = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
@@ -61,10 +61,11 @@ public class FilmDbStorage implements FilmStorage {
             stmt.setInt(5, film.getMpa().getId());
             return stmt;
         }, generatedId);
-        film.setId(Objects.requireNonNull(generatedId.getKey()).intValue());
+        int filmId = Objects.requireNonNull(generatedId.getKey()).intValue();
+        film.setId(filmId);
         addGenresToFilm(film.getGenres(), film.getId());
         log.info("Фильм с id: {} создан", film.getId());
-        return getFilmById(film.getId());
+        return film;
     }
 
     @Override

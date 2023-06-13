@@ -31,8 +31,7 @@ public class FilmService {
 
     public Film addFilm(Film film) {
         throwIfNoMpa(film);
-        return filmStorage.addFilm(film)
-                .orElseThrow(() -> new NotExistException(String.format("film id%s", film.getId())));
+        return filmStorage.addFilm(film);
     }
 
     public Film updateFilm(Film film) {

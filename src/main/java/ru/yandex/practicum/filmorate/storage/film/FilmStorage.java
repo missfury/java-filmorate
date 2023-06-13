@@ -10,7 +10,7 @@ public interface FilmStorage {
 
     Optional<Film> getFilmById(int filmId);
 
-    Optional<Film> addFilm(Film film);
+    Film addFilm(Film film);
 
     Optional<Film> updateFilm(Film film);
 
