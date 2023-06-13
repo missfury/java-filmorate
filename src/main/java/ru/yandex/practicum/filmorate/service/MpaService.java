@@ -3,10 +3,13 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -14,11 +17,12 @@ import java.util.Collection;
 public class MpaService {
     private final MpaStorage mpaStorage;
 
-    public Collection<Mpa> getAll() {
-        return mpaStorage.getAll();
+    public List<Mpa> getAllMpa() {
+        List<Optional<Mpa>> optMpa = mpaStorage.getAll();
+        return optMpa.stream().flatMap(Optional::stream).collect(Collectors.toList());
     }
 
-    public Mpa getById(int id) {
-        return mpaStorage.getById(id);
+    public Mpa getMpaById(int id) {
+        return mpaStorage.getById(id).orElseThrow(() -> new NotExistException(String.format("mpa id%s", id)));
     }
 }

@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.storage;
 
 import lombok.RequiredArgsConstructor;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -11,8 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -25,19 +23,17 @@ class MpaStorageTest {
 
     @Test
     void getAllMpa() {
-        Collection<Mpa> mpaRatings = mpaStorage.getAll();
-        Assertions.assertThat(mpaRatings)
-                .isNotEmpty()
-                .extracting(Mpa::getName)
-                .containsAll(Arrays.asList("G", "PG", "PG-13", "R", "NC-17"));
+        String mpaList = "[Optional[Mpa(id=1, name=G)], Optional[Mpa(id=2, name=PG)], Optional[Mpa(id=3, name=PG-13)]," +
+                " Optional[Mpa(id=4, name=R)], Optional[Mpa(id=5, name=NC-17)]]";
+        assertEquals(mpaList, mpaStorage.getAll().toString());
     }
 
     @ParameterizedTest
     @ValueSource(ints = {1,2,3,4,5})
     void getMpaById(int num) {
-        Mpa mpa = mpaStorage.getById(num);
-        assertEquals(num, mpa.getId());
+        Optional<Mpa> mpa = mpaStorage.getById(num);
+        assertEquals(num, mpa.get().getId());
         String[] arg = new String[]{"Пусто","G", "PG", "PG-13", "R", "NC-17"};
-        assertEquals(arg[num], mpa.getName());
+        assertEquals(arg[num], mpa.get().getName());
     }
 }

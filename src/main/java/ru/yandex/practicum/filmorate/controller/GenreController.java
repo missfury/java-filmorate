@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.service.GenreService;
 
-import java.util.Collection;
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -16,13 +16,13 @@ import java.util.Collection;
 public class GenreController {
     private final GenreService genreService;
 
-    @GetMapping
-    public Collection<Genre> findAll() {
-        return genreService.getAll();
+    @GetMapping("/{id}")
+    public Genre getGenre(@PathVariable int id) {
+        return genreService.getGenreById(id);
     }
 
-    @GetMapping("/{id}")
-    public Genre getById(@PathVariable int id) {
-        return genreService.getById(id);
+    @GetMapping
+    public List<Genre> getAllGenres() {
+        return genreService.getAllGenres();
     }
 }

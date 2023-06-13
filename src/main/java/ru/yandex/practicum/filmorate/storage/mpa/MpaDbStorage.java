@@ -2,15 +2,15 @@ package ru.yandex.practicum.filmorate.storage.mpa;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -20,27 +20,25 @@ public class MpaDbStorage implements MpaStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public Collection<Mpa> getAll() {
-        return jdbcTemplate.query(
-                "SELECT * FROM mpa",
-                this::makeMpa);
+    public List<Optional<Mpa>> getAll() {
+        String sqlQuery = "SELECT * FROM MPA ORDER BY ID";
+        return jdbcTemplate.query(sqlQuery, this::makeMpa);
     }
 
     @Override
-    public Mpa getById(int id) {
-        String sqlQuery = "SELECT * FROM mpa WHERE id = ?";
-        SqlRowSet mpaRows = jdbcTemplate.queryForRowSet(sqlQuery, id);
-
-        if (!mpaRows.next()) {
-            throw new NotExistException("Рейтинга с id: " + id + " не существует");
+    public Optional<Mpa> getById(int id) {
+        String sqlQuery = "SELECT * FROM MPA WHERE ID = ?";
+        try {
+            return jdbcTemplate.queryForObject(sqlQuery, this::makeMpa, id);
+        } catch (DataAccessException exception) {
+            return Optional.empty();
         }
-
-        return jdbcTemplate.queryForObject(sqlQuery, this::makeMpa, id);
     }
 
-    private Mpa makeMpa(ResultSet resultSet, int rowNum) throws SQLException {
-        int id = resultSet.getInt("id");
-        String name = resultSet.getString("name");
-        return new Mpa(id, name);
+    private Optional<Mpa> makeMpa(ResultSet resultSet, int rowNum) throws SQLException {
+        return Optional.ofNullable(Mpa.builder()
+                .id(resultSet.getInt("id"))
+                .name(resultSet.getString("name"))
+                .build());
     }
 }
