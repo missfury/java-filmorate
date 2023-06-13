@@ -124,7 +124,10 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film removeLike(int filmId, int userId) {
-        jdbcTemplate.update(
+        if (userId < 0) {
+            throw new NotExistException ("Id пользователя не может быть отрицательным ");
+        }
+        else jdbcTemplate.update(
                 "DELETE FROM films_like WHERE film_id = ? AND user_id = ?",
                 filmId,
                 userId);
