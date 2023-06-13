@@ -5,9 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
-import ru.yandex.practicum.filmorate.exceptions.NotExistException;
+import ru.yandex.practicum.filmorate.validate.FilmValidate;
 
 import java.util.List;
 
@@ -18,7 +17,6 @@ import java.util.List;
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
-    private final MpaStorage mpaStorage;
 
     public List<Film> getFilms() {
         return filmStorage.getFilms();
@@ -30,32 +28,32 @@ public class FilmService {
     }
 
     public Film addFilm(Film film) {
-        throwIfNoMpa(film);
+        FilmValidate.validate(film);
         return filmStorage.addFilm(film);
     }
 
     public Film updateFilm(Film film, int filmId) {
         filmStorage.checkFilm(filmId);
+        FilmValidate.validate(film);
         return filmStorage.updateFilm(film, filmId);
     }
 
-    private void throwIfNoMpa(Film film) {
-        mpaStorage.getById(film.getMpa().getId())
-                .orElseThrow(() -> new NotExistException(String.format("mpa id%s", film.getMpa().getId())));
+    public void removeById(int filmId) {
+        filmStorage.removeFilm(filmId);
     }
 
-    public void addLike(int filmId, int userId) {
-        getFilmById(filmId);
-        userStorage.getUserById(userId)
-                .orElseThrow(() -> new NotExistException(String.format("user id%s", userId)));
-        filmStorage.addLike(filmId, userId);
+    public Film addLike(int filmId, int userId) {
+        filmStorage.checkFilm(filmId);
+        userStorage.checkUser(userId);
+
+        return filmStorage.addLike(filmId, userId);
     }
 
-    public void deleteLike(int filmId, int userId) {
-        getFilmById(filmId);
-        userStorage.getUserById(userId)
-                .orElseThrow(() -> new NotExistException(String.format("user id%s", userId)));
-        filmStorage.removeLike(filmId, userId);
+    public Film deleteLike(int filmId, int userId) {
+        filmStorage.checkFilm(filmId);
+        userStorage.checkUser(userId);
+
+        return filmStorage.removeLike(filmId, userId);
     }
 
     public List<Film> getMostPopularFilms(int limitSize) {

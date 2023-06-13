@@ -5,12 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Component
@@ -19,26 +19,38 @@ public class MpaDbStorage implements MpaStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
+
     @Override
-    public List<Optional<Mpa>> getAll() {
-        String sqlQuery = "SELECT * FROM MPA ORDER BY ID";
-        return jdbcTemplate.query(sqlQuery, this::makeMpa);
+    public Mpa getById(int mpaId) {
+        checkMpa(mpaId);
+
+        return jdbcTemplate.queryForObject("SELECT * " +
+                "FROM mpa " +
+                "WHERE id = ?", this::makeMpa, mpaId);
     }
 
     @Override
-    public Optional<Mpa> getById(int id) {
-        String sqlQuery = "SELECT * FROM MPA WHERE ID = ?";
+    public List<Mpa> getAll() {
+        return jdbcTemplate.query("SELECT * " +
+                "FROM mpa " +
+                "ORDER BY id", this::makeMpa);
+    }
+
+    @Override
+    public void checkMpa(int mpaId) {
         try {
-            return jdbcTemplate.queryForObject(sqlQuery, this::makeMpa, id);
+            jdbcTemplate.queryForObject("SELECT * " +
+                    "FROM mpa " +
+                    "WHERE id = ?", this::makeMpa, mpaId);
         } catch (DataAccessException exception) {
-            return Optional.empty();
+            throw new NotExistException("Рейтинга с ID: " + mpaId + " не найдено");
         }
     }
 
-    private Optional<Mpa> makeMpa(ResultSet resultSet, int rowNum) throws SQLException {
-        return Optional.ofNullable(Mpa.builder()
+    private Mpa makeMpa(ResultSet resultSet, int rowNum) throws SQLException {
+        return Mpa.builder()
                 .id(resultSet.getInt("id"))
                 .name(resultSet.getString("name"))
-                .build());
+                .build();
     }
 }

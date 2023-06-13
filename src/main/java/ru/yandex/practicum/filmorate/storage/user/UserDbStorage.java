@@ -8,6 +8,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -183,6 +184,14 @@ public class UserDbStorage implements UserStorage {
                 .name(resultSet.getString("name"))
                 .birthday(resultSet.getTimestamp("birthday").toLocalDateTime().toLocalDate())
                 .build();
+    }
+
+    @Override
+    public void checkUser(int userId) {
+        if (getUserById(userId) == null) {
+            log.warn("ID - {} не существует", userId);
+            throw new NotExistException("Пользователь с ID: " + userId + " не найден");
+        }
     }
 
 }

@@ -43,6 +43,12 @@ public class FilmController {
         return filmService.updateFilm(film, film.getId());
     }
 
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable int id) {
+        log.info("Фильм с id: {} удален", id);
+        filmService.removeById(id);
+    }
+
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable int id, @PathVariable int userId) {
         log.info("Добавлен лайк фильму с id {} от пользователя с id {}", id, userId);

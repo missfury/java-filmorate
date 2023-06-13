@@ -31,5 +31,7 @@ public interface UserStorage {
 
     List<Integer> getFriendsIdByUserId(int userId);
 
+    void checkUser(final int userId);
+
 
 }
