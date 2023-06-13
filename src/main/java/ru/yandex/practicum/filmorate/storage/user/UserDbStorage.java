@@ -188,10 +188,11 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void checkUser(int userId) {
-        if (getUserById(userId) == null) {
+        if (getUserById(userId) == null || userId < 0) {
             log.warn("ID - {} не существует", userId);
             throw new NotExistException("Пользователь с ID: " + userId + " не найден");
         }
     }
+
 
 }
