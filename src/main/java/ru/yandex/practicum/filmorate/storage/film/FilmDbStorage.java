@@ -92,8 +92,8 @@ public class FilmDbStorage implements FilmStorage {
                 film.getReleaseDate(),
                 film.getDuration(),
                 film.getMpa().getId(),
-                film.getId());
-        film.setMpa(mpaStorage.getById(filmId));
+                filmId);
+        film.setId(filmId);
         film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
