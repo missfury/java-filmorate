@@ -3,11 +3,13 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import ru.yandex.practicum.filmorate.validate.FilmValidate;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -58,5 +60,19 @@ public class FilmService {
 
     public List<Film> getMostPopularFilms(int limitSize) {
         return filmStorage.getMostPopularFilms(limitSize);
+    }
+
+    public boolean validate(Film film) {
+        if (film == null) {
+            log.warn("Фильм не должен быть null");
+            throw new ValidationException("Ошибка валидации. Тело запроса пустое.");
+        }
+
+        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
+            log.warn("Дата релиза не должна быть раньше, чем Декабрь 28, 1895");
+            throw new ValidationException("Ошибка валидации. Некорректная дата релиза.");
+        }
+
+        return true;
     }
 }

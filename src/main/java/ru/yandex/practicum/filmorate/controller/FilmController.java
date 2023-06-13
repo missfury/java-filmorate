@@ -1,21 +1,29 @@
 package ru.yandex.practicum.filmorate.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import javax.validation.Valid;
 import javax.validation.ValidationException;
+import javax.validation.constraints.Positive;
 import java.time.LocalDate;
 import java.util.List;
 
-@RequiredArgsConstructor
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/films")
 public class FilmController {
     private final FilmService filmService;
+
+    @Autowired
+    public FilmController(FilmService filmService) {
+        this.filmService = filmService;
+    }
 
     @GetMapping
     public List<Film> getFilms() {
@@ -32,14 +40,14 @@ public class FilmController {
     @ResponseStatus(HttpStatus.CREATED)
     public Film createFilm(@Valid @RequestBody Film film) {
         log.info("Фильм добавлен {}", film);
-        throwIfFilmReleaseIncorrect(film.getReleaseDate());
+        filmService.validate(film);
         return filmService.addFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
         log.info("Фильм обновлен {}", film);
-        throwIfFilmReleaseIncorrect(film.getReleaseDate());
+        filmService.validate(film);
         return filmService.updateFilm(film, film.getId());
     }
 
@@ -50,7 +58,7 @@ public class FilmController {
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public void addLike(@PathVariable int id, @PathVariable int userId) {
+    public void addLike(@PathVariable int id, @PathVariable @Positive int userId) {
         log.info("Добавлен лайк фильму с id {} от пользователя с id {}", id, userId);
         filmService.addLike(id, userId);
     }
@@ -62,14 +70,9 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getMostPopularFilms(@RequestParam(defaultValue = "10", required = false) Integer count) {
+    public List<Film> getMostPopularFilms(@RequestParam(defaultValue = "10") @Positive int count) {
         log.info("Получено {} самых популярных фильмов", count);
         return filmService.getMostPopularFilms(count);
     }
 
-    private void throwIfFilmReleaseIncorrect(LocalDate date) {
-        if (date.isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new ValidationException("В качестве даты релиза указана некорректная дата");
-        }
-    }
 }
