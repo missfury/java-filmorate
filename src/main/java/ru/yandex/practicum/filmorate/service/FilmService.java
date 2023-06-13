@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -61,7 +62,9 @@ public class FilmService {
     public Film deleteLike(int filmId, int userId) {
         filmStorage.checkFilm(filmId);
         userStorage.checkUser(userId);
-
+        if (userId < 0) {
+            throw new NotExistException("Пользователь с id: " + userId + " не найден");
+        }
         return filmStorage.removeLike(filmId, userId);
     }
 
