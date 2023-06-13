@@ -2,13 +2,12 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -23,18 +22,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Repository("filmDbStorage")
+@Component
+@RequiredArgsConstructor
 
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
     private final GenreStorage genreStorage;
-
-    @Autowired
-    public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.genreStorage = genreStorage;
-    }
-
 
     @Override
     public List<Film> getFilms() {
@@ -71,7 +64,7 @@ public class FilmDbStorage implements FilmStorage {
         }, generatedId);
         int filmId = Objects.requireNonNull(generatedId.getKey()).intValue();
         film.setId(filmId);
-        addGenresToFilm(film);
+        addGenresToFilm(film.getGenres(), film.getId());
         film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} создан", film.getId());
         return film;
@@ -89,7 +82,7 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 filmId);
         film.setId(filmId);
-        addGenresToFilm(film);
+        addGenresToFilm(film.getGenres(), filmId);
         film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
@@ -107,26 +100,29 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sqlQuery, filmId, userId);
     }
 
-    private void addGenresToFilm(Film film) {
-        String sqlQueryRemove = "DELETE FROM films_genre " +
-                "WHERE film_id = ?";
-        if (film.getGenres() != null) {
-            jdbcTemplate.update(sqlQueryRemove, film.getId());
-
-            List<Integer> genresIds = film.getGenres().stream()
-                    .map(Genre::getId)
-                    .distinct()
-                    .collect(Collectors.toList());
-
-            for (Integer genreId : genresIds) {
-                jdbcTemplate.update("INSERT INTO films_genre(film_id, genre_id) " +
-                        "VALUES(?,?)", film.getId(), genreId);
-            }
+    private void addGenresToFilm(List<Genre> genres, int filmId) {
+        if (genres == null) {
+            return;
         }
+        List<Integer> genreIds = genres.stream()
+                .map(Genre::getId)
+                .distinct()
+                .collect(Collectors.toList());
 
-        if (film.getGenres() != null && film.getGenres().isEmpty()) {
-            jdbcTemplate.update(sqlQueryRemove, film.getId());
-        }
+        String sqlQuery = "INSERT INTO FILMS_GENRE VALUES(?, ?)";
+        jdbcTemplate.batchUpdate(
+                sqlQuery,
+                new BatchPreparedStatementSetter() {
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        int genreId = genreIds.get(i);
+                        ps.setInt(1, filmId);
+                        ps.setInt(2, genreId);
+                    }
+
+                    public int getBatchSize() {
+                        return genreIds.size();
+                    }
+                });
         }
 
     @Override
