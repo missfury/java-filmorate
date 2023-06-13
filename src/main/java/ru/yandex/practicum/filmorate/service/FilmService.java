@@ -25,8 +25,8 @@ public class FilmService {
     }
 
     public Film getFilmById(int filmId) {
-        return filmStorage.getFilmById(filmId)
-                .orElseThrow(() -> new NotExistException(String.format("film id%s", filmId)));
+        filmStorage.checkFilm(filmId);
+        return filmStorage.getFilmById(filmId);
     }
 
     public Film addFilm(Film film) {
@@ -34,11 +34,9 @@ public class FilmService {
         return filmStorage.addFilm(film);
     }
 
-    public Film updateFilm(Film film) {
-        getFilmById(film.getId());
-        throwIfNoMpa(film);
-        return filmStorage.updateFilm(film)
-                .orElseThrow(() -> new NotExistException(String.format("film id%s", film.getId())));
+    public Film updateFilm(Film film, int filmId) {
+        filmStorage.checkFilm(filmId);
+        return filmStorage.updateFilm(film, filmId);
     }
 
     private void throwIfNoMpa(Film film) {

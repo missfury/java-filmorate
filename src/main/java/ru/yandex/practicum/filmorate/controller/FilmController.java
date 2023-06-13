@@ -40,7 +40,7 @@ public class FilmController {
     public Film updateFilm(@Valid @RequestBody Film film) {
         log.info("Фильм обновлен {}", film);
         throwIfFilmReleaseIncorrect(film.getReleaseDate());
-        return filmService.updateFilm(film);
+        return filmService.updateFilm(film, film.getId());
     }
 
     @PutMapping("/{id}/like/{userId}")

@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -37,12 +38,12 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Optional<Film> getFilmById(int filmId) {
+    public Film getFilmById(int filmId) {
         String sqlQuery = "SELECT * FROM FILM F, MPA M WHERE F.ID = ? AND F.RATING = M.ID";
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(sqlQuery, this::makeFilm, filmId));
+            return jdbcTemplate.queryForObject(sqlQuery, this::makeFilm, filmId);
         } catch (DataAccessException exception) {
-            return Optional.empty();
+            return null;
         }
     }
 
@@ -64,12 +65,13 @@ public class FilmDbStorage implements FilmStorage {
         int filmId = Objects.requireNonNull(generatedId.getKey()).intValue();
         film.setId(filmId);
         addGenresToFilm(film.getGenres(), film.getId());
+        film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
 
     @Override
-    public Optional<Film> updateFilm(Film film) {
+    public Film updateFilm(Film film, int filmId) {
         jdbcTemplate.update(
                 "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, " +
                         "rating = ? WHERE id = ?",
@@ -78,11 +80,12 @@ public class FilmDbStorage implements FilmStorage {
                 film.getReleaseDate(),
                 film.getDuration(),
                 film.getMpa().getId(),
-                film.getId());
-        jdbcTemplate.update("DELETE FROM FILMS_GENRE WHERE FILM_ID = ?", film.getId());
-        addGenresToFilm(film.getGenres(), film.getId());
+                filmId);
+        film.setId(filmId);
+        addGenresToFilm(film.getGenres(), filmId);
+        film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} изменен", film.getId());
-        return getFilmById(film.getId());
+        return film;
     }
 
     @Override
@@ -158,6 +161,14 @@ public class FilmDbStorage implements FilmStorage {
                 .mpa(filmMpa)
                 .genres(genreStorage.getAllByIdFilm(resultSet.getInt("id")))
                 .build();
+    }
+
+    @Override
+    public void checkFilm(int filmId) {
+        if (getFilmById(filmId) == null) {
+            log.warn("ID - {} не существует", filmId);
+            throw new NotExistException("Фильм с ID: " + filmId + " не найден");
+        }
     }
 
 
