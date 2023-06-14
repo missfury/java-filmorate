@@ -32,9 +32,6 @@ public class Film {
     private Set<Genre> genres = new TreeSet<>(Comparator.comparing(Genre::getId));
 
     public void addGenre(Genre genre) {
-        if (genres == null) {
-            genres = new LinkedHashSet<>();
-        }
         genres.add(genre);
     }
 }

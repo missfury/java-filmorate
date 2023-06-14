@@ -26,17 +26,14 @@ public class FilmDbStorage implements FilmStorage {
 
     @Autowired
     public FilmDbStorage(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+        this.jdbcTemplate = jdbcTemplate;    }
 
     @Override
     public List<Film> getFilms() {
         String sqlQuery = "SELECT * " +
                 "FROM films AS f " +
                 "JOIN mpa AS m ON f.rating = m.id";
-        List<Film> films = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs,rowNum));
-        loadFilmsGenres(films);
-        return films;
+        return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
 
     @Override
