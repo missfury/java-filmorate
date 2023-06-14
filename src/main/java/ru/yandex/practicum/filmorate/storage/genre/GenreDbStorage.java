@@ -50,6 +50,27 @@ public class GenreDbStorage implements GenreStorage {
     }
 
     @Override
+    public void loadFilmsGenres(List<Film> films) throws DataAccessException {
+        final List<Integer> ids = films.stream().map(Film::getId).collect(Collectors.toList());
+        String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));
+        jdbcTemplate.query(
+                String.format("select FILM_ID, G.* from GENRE G " +
+                        "                        left join FILMS_GENRE FG on G.ID = FG.GENRE_ID " +
+                        "                        where FILM_ID in (%s)", inSql),
+                ids.toArray(),
+                (rs, rowNum) -> makeFilmList(rs, films));
+    }
+
+    private Film makeFilmList(ResultSet rs, List<Film> films) throws SQLException {
+        long filmId = rs.getLong("film_id");
+        int genreId = rs.getInt("genre_id");
+        String name = rs.getString("name");
+        final Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getId, film -> film));
+        filmMap.get(filmId).addGenre(new Genre(genreId, name));
+        return filmMap.get(filmId);
+    }
+
+    @Override
     public void checkGenre(int genreId) {
         try {
             jdbcTemplate.queryForObject("SELECT * FROM GENRE WHERE ID = ?", this::makeGenre, genreId);
