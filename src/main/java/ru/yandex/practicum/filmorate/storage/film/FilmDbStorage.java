@@ -17,8 +17,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
-
-
 @Slf4j
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmStorage {
@@ -27,7 +25,7 @@ public class FilmDbStorage implements FilmStorage {
     @Autowired
     public FilmDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-    }
+}
 
     @Override
     public List<Film> getFilms() {
@@ -36,7 +34,6 @@ public class FilmDbStorage implements FilmStorage {
                 "JOIN mpa AS m ON f.rating = m.id";
         return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
-
     @Override
     public Film getFilmById(int filmId) {
         try {
@@ -47,7 +44,6 @@ public class FilmDbStorage implements FilmStorage {
             return null;
         }
     }
-
     @Override
     public Film addFilm(Film film) {
         KeyHolder generatedId = new GeneratedKeyHolder();
@@ -68,7 +64,6 @@ public class FilmDbStorage implements FilmStorage {
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
-
     @Override
     public Film updateFilm(Film film, int filmId) {
         jdbcTemplate.update(
@@ -85,7 +80,6 @@ public class FilmDbStorage implements FilmStorage {
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }
-
     private void addGenresToFilm(Film film) {
         final int filmId = film.getId();
         jdbcTemplate.update(
@@ -106,13 +100,11 @@ public class FilmDbStorage implements FilmStorage {
                         ps.setInt(1, filmId);
                         ps.setInt(2, genresList.get(i).getId());
                     }
-
                     public int getBatchSize() {
                         return genresList.size();
                     }
                 });
     }
-
     @Override
     public void loadFilmsGenres(List<Film> films) throws DataAccessException {
         final List<Integer> ids = films.stream().map(Film::getId).collect(Collectors.toList());
@@ -124,7 +116,6 @@ public class FilmDbStorage implements FilmStorage {
                 ids.toArray(),
                 (rs, rowNum) -> makeFilmList(rs, films));
     }
-
     private Film makeFilmList(ResultSet rs, List<Film> films) throws SQLException {
         long filmId = rs.getLong("film_id");
         int genreId = rs.getInt("id");
@@ -133,7 +124,6 @@ public class FilmDbStorage implements FilmStorage {
         filmMap.get(filmId).addGenre(new Genre(genreId, name));
         return filmMap.get(filmId);
     }
-
     @Override
     public void removeFilm(int filmId) {
         if (jdbcTemplate.update("DELETE FROM films " +
@@ -142,7 +132,6 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotExistException("Фильм с ID: " + filmId + " не найден");
         }
     }
-
     @Override
     public Film addLike(int filmId, int userId) {
         jdbcTemplate.update(
@@ -151,7 +140,6 @@ public class FilmDbStorage implements FilmStorage {
                 userId);
         return getFilmById(filmId);
     }
-
     @Override
     public Film removeLike(int filmId, int userId) {
         jdbcTemplate.update(
@@ -160,7 +148,6 @@ public class FilmDbStorage implements FilmStorage {
                 userId);
         return getFilmById(filmId);
     }
-
     @Override
     public List<Film> getMostPopularFilms(int limitSize) {
         String sqlQuery = "SELECT " +
@@ -180,7 +167,6 @@ public class FilmDbStorage implements FilmStorage {
                 "LIMIT ?";
         return jdbcTemplate.query(sqlQuery, this::makeFilm,limitSize);
     }
-
     private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
         Mpa filmMpa = Mpa.builder()
                 .id(resultSet.getInt("mpa.id"))
@@ -196,7 +182,6 @@ public class FilmDbStorage implements FilmStorage {
                 .genres(new TreeSet<>())
                 .build();
     }
-
     @Override
     public void checkFilm(int filmId) {
         if (getFilmById(filmId) == null) {
@@ -205,5 +190,3 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 }
-
-
