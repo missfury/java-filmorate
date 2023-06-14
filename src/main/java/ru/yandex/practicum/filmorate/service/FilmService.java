@@ -45,13 +45,17 @@ public class FilmService {
 
     public Film addFilm(Film film) {
         FilmValidate.validate(film);
-        return filmStorage.addFilm(film);
+        filmStorage.addFilm(film);
+        genreStorage.addFilmGenre(film);
+        return film;
     }
 
-    public Film updateFilm(Film film, int filmId) {
-        filmStorage.checkFilm(filmId);
+    public Film updateFilm(Film film) {
+        filmStorage.checkFilm(film.getId());
         FilmValidate.validate(film);
-        return filmStorage.updateFilm(film, filmId);
+        genreStorage.updateFilmGenre(film);
+        filmStorage.updateFilm(film, film.getId());
+        return film;
     }
 
     public void removeById(int filmId) {
