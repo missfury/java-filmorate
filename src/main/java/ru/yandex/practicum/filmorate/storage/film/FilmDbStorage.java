@@ -36,7 +36,7 @@ public class FilmDbStorage implements FilmStorage {
         String sqlQuery = "SELECT * " +
                 "FROM films AS f " +
                 "JOIN mpa AS m ON f.rating = m.id";
-        return jdbcTemplate.query(sqlQuery, this::makeFilm);
+        return jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs));
     }
 
     @Override
@@ -44,7 +44,7 @@ public class FilmDbStorage implements FilmStorage {
         try {
             return jdbcTemplate.queryForObject("SELECT * " +
                     "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
-                    "WHERE f.id = ?", this::makeFilm, filmId);
+                    "WHERE f.id = ?", (rs, rowNum) -> makeFilm(rs), filmId);
         } catch (DataAccessException exception) {
             return null;
         }
