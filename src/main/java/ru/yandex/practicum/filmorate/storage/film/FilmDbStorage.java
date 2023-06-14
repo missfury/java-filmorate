@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.film;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -42,12 +43,16 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film getFilmById(int filmId) {
-        final String sql = "SELECT * " +
-                "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
-                "WHERE f.id = ?";
-        final List<Film> films =
-                jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs, rowNum), filmId);
-        return films.get(0);
+        try {
+            final String sql = "SELECT * " +
+                    "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
+                    "WHERE f.id = ?";
+            final List<Film> films =
+                    jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs, rowNum), filmId);
+            return films.get(0);
+        } catch (DataAccessException exception) {
+            return null;
+        }
     }
 
     @Override
