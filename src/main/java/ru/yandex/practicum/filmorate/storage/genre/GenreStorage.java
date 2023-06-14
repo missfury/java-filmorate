@@ -15,5 +15,4 @@ public interface GenreStorage {
 
     void checkGenre(int genreId);
 
-    void loadFilmsGenres(List<Film> films);
 }

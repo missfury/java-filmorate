@@ -34,7 +34,9 @@ public class FilmDbStorage implements FilmStorage {
         String sqlQuery = "SELECT * " +
                 "FROM films AS f " +
                 "JOIN mpa AS m ON f.rating = m.id";
-        return jdbcTemplate.query(sqlQuery, this::makeFilm);
+        List<Film> films = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs,rowNum));
+        loadFilmsGenres(films);
+        return films;
     }
 
     @Override
