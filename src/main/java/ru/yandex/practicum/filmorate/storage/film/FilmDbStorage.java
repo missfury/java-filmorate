@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
     private final GenreStorage genreStorage;
+
     @Autowired
     public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage) {
         this.jdbcTemplate = jdbcTemplate;
@@ -37,6 +38,7 @@ public class FilmDbStorage implements FilmStorage {
                 "JOIN mpa AS m ON f.rating = m.id";
         return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
+
     @Override
     public Film getFilmById(int filmId) {
         try {
@@ -47,6 +49,7 @@ public class FilmDbStorage implements FilmStorage {
             return null;
         }
     }
+
     @Override
     public Film addFilm(Film film) {
         KeyHolder generatedId = new GeneratedKeyHolder();
@@ -102,6 +105,7 @@ public class FilmDbStorage implements FilmStorage {
                         ps.setInt(1, filmId);
                         ps.setInt(2, genreId);
                     }
+
                     public int getBatchSize() {
                         return genreIds.size();
                     }
