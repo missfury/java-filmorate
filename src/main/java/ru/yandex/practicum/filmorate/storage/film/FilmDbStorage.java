@@ -39,16 +39,13 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film getFilmById(int filmId) {
-        final String sql = "SELECT * " +
-                "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
-                "WHERE f.id = ?";
-        final List<Film> films =
-                jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs, rowNum), filmId);
-        if (films.size() != 1) {
-            throw new NotExistException("Не найден фильм с id = " + filmId);
+        try {
+            return jdbcTemplate.queryForObject("SELECT * " +
+                    "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
+                    "WHERE f.id = ?", this::makeFilm, filmId);
+        } catch (DataAccessException exception) {
+            return null;
         }
-        loadFilmsGenres(films);
-        return films.get(0);
     }
 
     @Override
@@ -132,26 +129,24 @@ public class FilmDbStorage implements FilmStorage {
                 "GROUP BY films.id, films.name, films.description, films.release_date, films.duration " +
                 "ORDER BY COUNT(films_like.film_id) DESC " +
                 "LIMIT ?";
-        List<Film> films = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs,rowNum), limitSize);
+        List<Film> films = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs), limitSize);
         loadFilmsGenres(films);
         return films;
     }
 
-    private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
-        Mpa filmMpa = Mpa.builder()
-                .id(resultSet.getInt("mpa.id"))
-                .name(resultSet.getString("mpa.name"))
-                .build();
-
-        return Film.builder()
-                .id(resultSet.getInt("id"))
-                .name(resultSet.getString("name"))
-                .description(resultSet.getString("description"))
-                .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
-                .duration(resultSet.getInt("duration"))
-                .mpa(filmMpa)
-                .genres(new LinkedHashSet<>())
-                .build();
+    private Film makeFilm(ResultSet resultSet) throws SQLException {
+        Film film = new Film(
+                resultSet.getInt("id"),
+                resultSet.getString("name"),
+                resultSet.getString("description"),
+                resultSet.getDate("release_date").toLocalDate(),
+                resultSet.getInt("duration"),
+                resultSet.getInt("rating")
+        );
+        film.setMpa(
+                new Mpa(resultSet.getInt("id"),
+                        resultSet.getString("name")));
+        return film;
     }
 
     private void loadFilmsGenres(List<Film> films) throws DataAccessException {

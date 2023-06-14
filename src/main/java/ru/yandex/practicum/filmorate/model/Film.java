@@ -28,7 +28,17 @@ public class Film {
     private Integer duration;
     private List<Integer> usersLikes;
     private Mpa mpa;
+    private int rating;
     private LinkedHashSet<Genre> genres;
+
+    public Film(int filmId, String nameFilm, String description, LocalDate releaseDate, int duration, int rate) {
+        this.id = filmId;
+        this.name = nameFilm;
+        this.description = description;
+        this.releaseDate = releaseDate;
+        this.duration = duration;
+        this.rating = rate;
+    }
 
     public void addGenre(Genre genre) {
         if (genres == null) {
