@@ -19,7 +19,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Repository("filmDbStorage")
@@ -69,21 +68,13 @@ public class FilmDbStorage implements FilmStorage {
         }, generatedId);
         int filmId = Objects.requireNonNull(generatedId.getKey()).intValue();
         film.setId(filmId);
-        if (film.getGenres() != null) {
-            addGenresToFilm((TreeSet<Genre>) film.getGenres(), film.getId());
-        }
+        addGenresToFilm(film);
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
 
     @Override
     public Film updateFilm(Film film, int filmId) {
-        if (film.getGenres() != null) {
-            jdbcTemplate.update(
-                    "DELETE FROM films_genre WHERE film_id = ?",
-                    film.getId());
-            addGenresToFilm((TreeSet<Genre>) film.getGenres(), film.getId());
-        }
         jdbcTemplate.update(
                 "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, " +
                         "rating = ? WHERE id = ?",
@@ -94,6 +85,7 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 filmId);
         film.setId(filmId);
+        addGenresToFilm(film);
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }
@@ -127,27 +119,29 @@ public class FilmDbStorage implements FilmStorage {
         return getFilmById(filmId);
     }
 
-    private void addGenresToFilm(TreeSet<Genre> genres, int filmId) {
-        if (genres == null) {
+    private void addGenresToFilm(Film film) {
+        final int filmId = film.getId();
+        jdbcTemplate.update(
+                "DELETE FROM FILMS_GENRE WHERE FILM_ID = ?",
+                filmId);
+        final TreeSet<Genre> genres = new TreeSet<>(Comparator.comparing(Genre::getId));
+        if (film.getGenres() == null) {
+            film.setGenres(genres);
             return;
         }
-        List<Integer> genreIds = genres.stream()
-                .map(Genre::getId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        String sqlQuery = "INSERT INTO FILMS_GENRE VALUES(?, ?)";
+        genres.addAll(film.getGenres());
+        film.setGenres(genres);
+        final List<Genre> genresList = new ArrayList<>(film.getGenres());
         jdbcTemplate.batchUpdate(
-                sqlQuery,
+                "insert into FILMS_GENRE (FILM_ID, GENRE_ID) values (?, ?)",
                 new BatchPreparedStatementSetter() {
                     public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        int genreId = genreIds.get(i);
-                        ps.setInt(1, filmId);
-                        ps.setInt(2, genreId);
+                        ps.setLong(1, filmId);
+                        ps.setLong(2, genresList.get(i).getId());
                     }
 
                     public int getBatchSize() {
-                        return genreIds.size();
+                        return genresList.size();
                     }
                 });
         }
