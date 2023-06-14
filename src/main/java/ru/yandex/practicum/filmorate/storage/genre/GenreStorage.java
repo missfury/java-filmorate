@@ -11,8 +11,6 @@ public interface GenreStorage {
 
     Genre getById(final int genreId);
 
-    void getAllByIdFilm(List<Film> films);
-
     void isGenreExisted(int id);
 
     void checkGenre(int genreId);

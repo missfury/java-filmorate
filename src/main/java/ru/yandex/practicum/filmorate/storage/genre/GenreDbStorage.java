@@ -36,19 +36,6 @@ public class GenreDbStorage implements GenreStorage {
         return jdbcTemplate.query(sqlQuery, this::makeGenre);
     }
 
-    public void getAllByIdFilm(List<Film> films) {
-        final Map<Integer, Film> ids = films.stream().collect(Collectors.toMap(Film::getId, Function.identity()));
-        String inSql = String.join(",", Collections.nCopies(films.size(), "?"));
-        final String sqlQuery = "SELECT * from genres g, films_genre fg " +
-                "where fg.genre_id = g.id AND fg.film_id in (" + inSql + ")";
-        jdbcTemplate.query(sqlQuery, (rs) -> {
-            if (!rs.wasNull()) {
-                final Film film = ids.get(rs.getInt("FILM_ID"));
-                film.addGenre(new Genre(rs.getInt("ID"), rs.getString("NAME")));
-            }
-        }, films.stream().map(Film::getId).toArray());
-    }
-
     @Override
     public void loadFilmsGenres(List<Film> films) throws DataAccessException {
         final List<Integer> ids = films.stream().map(Film::getId).collect(Collectors.toList());
