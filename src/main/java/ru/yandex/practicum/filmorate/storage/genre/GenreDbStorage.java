@@ -38,8 +38,7 @@ public class GenreDbStorage implements GenreStorage {
         return jdbcTemplate.query(sqlQuery, this::makeGenre);
     }
 
-    @Override
-    public void getAllByIdFilm(List<Film> films) throws DataAccessException {
+    public void getAllByIdFilm(List<Film> films) {
         final Map<Integer, Film> ids = films.stream().collect(Collectors.toMap(Film::getId, Function.identity()));
         String inSql = String.join(",", Collections.nCopies(films.size(), "?"));
         final String sqlQuery = "SELECT * from genres g, films_genre fg " +
@@ -59,36 +58,6 @@ public class GenreDbStorage implements GenreStorage {
         } catch (DataAccessException exception) {
             throw new NotExistException("Жанра с ID: " + genreId + " не найдено");
         }
-    }
-
-    @Override
-    public void addFilmGenre(Film film) {
-        if (film.getGenres() == null || film.getGenres().isEmpty()) {
-            return;
-        }
-        String sql = "INSERT INTO films_genre (film_id, genre_id) " +
-                "VALUES(?,?)";
-        List<Genre> genres = new ArrayList<>(film.getGenres());
-        jdbcTemplate.batchUpdate(sql,
-                new BatchPreparedStatementSetter() {
-                    @Override
-                    public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        ps.setLong(1, film.getId());
-                        ps.setLong(2, genres.get(i).getId());
-                    }
-
-                    @Override
-                    public int getBatchSize() {
-                        return film.getGenres().size();
-                    }
-                });
-    }
-
-    @Override
-    public void updateFilmGenre(Film film) {
-        String sqlQueryGenres = "DELETE FROM films_genre WHERE film_id = ?";
-        jdbcTemplate.update(sqlQueryGenres, film.getId());
-        this.addFilmGenre(film);
     }
 
     @Override

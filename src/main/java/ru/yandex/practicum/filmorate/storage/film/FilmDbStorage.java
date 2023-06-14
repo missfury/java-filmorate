@@ -1,75 +1,113 @@
 package ru.yandex.practicum.filmorate.storage.film;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
-
+    private final GenreStorage genreStorage;
     @Autowired
-    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage) {
         this.jdbcTemplate = jdbcTemplate;
+        this.genreStorage = genreStorage;
     }
 
     @Override
     public List<Film> getFilms() {
-        String sqlQuery = "SELECT f.*,  m.name AS mpa_name FROM films AS f " +
-                "LEFT JOIN mpa AS m ON f.rating = m.id";
+        String sqlQuery = "SELECT * " +
+                "FROM films AS f " +
+                "JOIN mpa AS m ON f.rating = m.id";
         return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
-
     @Override
     public Film getFilmById(int filmId) {
-        String sqlQuery = "SELECT f.*,  m.name AS mpa_name FROM films AS f " +
-                "LEFT JOIN mpa AS m ON f.rating = m.id WHERE f.id = ?";
-        return jdbcTemplate.queryForObject(sqlQuery, this::makeFilm, filmId);
+        try {
+            return jdbcTemplate.queryForObject("SELECT * " +
+                    "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
+                    "WHERE f.id = ?", this::makeFilm, filmId);
+        } catch (DataAccessException exception) {
+            return null;
+        }
     }
-
     @Override
     public Film addFilm(Film film) {
-        String sqlQuery = "INSERT INTO films (name,description,release_date,duration,rating) VALUES (?,?,?,?,?)";
-        KeyHolder id = new GeneratedKeyHolder();
+        KeyHolder generatedId = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sqlQuery, new String[]{"id"});
-            ps.setString(1, film.getName());
-            ps.setString(2, film.getDescription());
-            ps.setDate(3, java.sql.Date.valueOf(film.getReleaseDate()));
-            ps.setInt(4, film.getDuration());
-            ps.setInt(5, film.getMpa().getId());
-            return ps;
-        }, id);
-        film.setId(Objects.requireNonNull(id.getKey()).intValue());
+            PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO films (name, description, release_date, duration, rating) VALUES(?,?,?,?,?)",
+                    new String[]{"id"});
+            stmt.setString(1, film.getName());
+            stmt.setString(2, film.getDescription());
+            stmt.setDate(3, Date.valueOf(film.getReleaseDate()));
+            stmt.setInt(4, film.getDuration());
+            stmt.setInt(5, film.getMpa().getId());
+            return stmt;
+        }, generatedId);
+        int filmId = Objects.requireNonNull(generatedId.getKey()).intValue();
+        film.setId(filmId);
+        addGenresToFilm((TreeSet<Genre>) film.getGenres(), film.getId());
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
 
     @Override
-    public Film updateFilm(Film film) {
-        String sqlQuery = "UPDATE films SET " +
-                "name = ?," +
-                "description = ?," +
-                "release_date = ?," +
-                "duration = ?," +
-                "rating = ?" +
-                "WHERE id = ?";
-        jdbcTemplate.update(sqlQuery, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(),
-                film.getMpa().getId(), film.getId());
+    public Film updateFilm(Film film, int filmId) {
+        jdbcTemplate.update(
+                "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, " +
+                        "rating = ? WHERE id = ?",
+                film.getName(),
+                film.getDescription(),
+                film.getReleaseDate(),
+                film.getDuration(),
+                film.getMpa().getId(),
+                filmId);
+        film.setId(filmId);
+        addGenresToFilm((TreeSet<Genre>) film.getGenres(), film.getId());
+        log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }
+
+    private void addGenresToFilm(TreeSet<Genre> genres, int filmId) {
+        if (genres == null) {
+            return;
+        }
+        List<Integer> genreIds = genres.stream()
+                .map(Genre::getId)
+                .distinct()
+                .collect(Collectors.toList());
+        String sqlQuery = "INSERT INTO FILMS_GENRE VALUES(?, ?)";
+        jdbcTemplate.batchUpdate(
+                sqlQuery,
+                new BatchPreparedStatementSetter() {
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        int genreId = genreIds.get(i);
+                        ps.setInt(1, filmId);
+                        ps.setInt(2, genreId);
+                    }
+                    public int getBatchSize() {
+                        return genreIds.size();
+                    }
+                });
+    }
+
 
     @Override
     public void removeFilm(int filmId) {
@@ -99,12 +137,23 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getMostPopularFilms(int id) {
-        String sqlQuery = "SELECT f.*, m.name AS mpa_name FROM films AS f " +
-                "LEFT JOIN rating AS m ON f.rating = m.id " +
-                "LEFT JOIN films_like AS l ON f.id = l.film_id " +
-                "GROUP BY f.id ORDER BY COUNT(l.user_id) DESC LIMIT ?";
-        return jdbcTemplate.query(sqlQuery, this::makeFilm, id);
+    public List<Film> getMostPopularFilms(int limitSize) {
+        String sqlQuery = "SELECT " +
+                "films.id, " +
+                "films.name, " +
+                "films.description, " +
+                "films.release_date, " +
+                "films.duration," +
+                "mpa.id, " +
+                "mpa.name, " +
+                "COUNT(films_like.film_id)" +
+                "FROM films " +
+                "JOIN mpa ON films.rating = mpa.id " +
+                "LEFT JOIN films_like ON films.id = films_like.film_id " +
+                "GROUP BY films.id, films.name, films.description, films.release_date, films.duration " +
+                "ORDER BY COUNT(films_like.film_id) DESC " +
+                "LIMIT ?";
+        return jdbcTemplate.query(sqlQuery, this::makeFilm,limitSize);
     }
 
     private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
@@ -119,7 +168,7 @@ public class FilmDbStorage implements FilmStorage {
                 .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
                 .duration(resultSet.getInt("duration"))
                 .mpa(filmMpa)
-                .genres(new LinkedHashSet<>())
+                .genres(new HashSet<>())
                 .build();
     }
 

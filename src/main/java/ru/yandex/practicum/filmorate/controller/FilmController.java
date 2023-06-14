@@ -45,7 +45,7 @@ public class FilmController {
     public Film updateFilm(@Valid @RequestBody Film film) {
         log.info("Фильм обновлен {}", film);
         filmService.validate(film);
-        return filmService.updateFilm(film);
+        return filmService.updateFilm(film, film.getId());
     }
 
     @DeleteMapping("/{id}")

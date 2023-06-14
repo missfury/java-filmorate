@@ -13,10 +13,6 @@ public interface GenreStorage {
 
     void getAllByIdFilm(List<Film> films);
 
-    void addFilmGenre(Film film);
-
-    void updateFilmGenre(Film film);
-
     void isGenreExisted(int id);
 
     void checkGenre(int genreId);
