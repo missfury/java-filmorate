@@ -24,13 +24,11 @@ import java.util.*;
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
-    private final GenreStorage genreStorage;
 
     @Autowired
     public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage) {
         this.jdbcTemplate = jdbcTemplate;
-        this.genreStorage = genreStorage;
-    }
+           }
 
     @Override
     public List<Film> getFilms() {
@@ -99,7 +97,6 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 
-
     @Override
     public Film addLike(int filmId, int userId) {
         jdbcTemplate.update(
@@ -108,7 +105,6 @@ public class FilmDbStorage implements FilmStorage {
                 userId);
         return getFilmById(filmId);
     }
-
 
     @Override
     public Film removeLike(int filmId, int userId) {
@@ -166,7 +162,6 @@ public class FilmDbStorage implements FilmStorage {
         return jdbcTemplate.query(sqlQuery, this::makeFilm,limitSize);
     }
 
-
     private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
         Mpa filmMpa = Mpa.builder()
                 .id(resultSet.getInt("mpa.id"))
@@ -191,7 +186,5 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotExistException("Фильм с ID: " + filmId + " не найден");
         }
     }
-
-
 }
 
