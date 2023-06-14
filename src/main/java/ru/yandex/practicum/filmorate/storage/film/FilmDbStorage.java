@@ -130,16 +130,21 @@ public class FilmDbStorage implements FilmStorage {
         return jdbcTemplate.query(sqlQuery, this::makeFilm,limitSize);
     }
 
-    private Film makeFilm(ResultSet rs, int rowNum) throws SQLException {
-        Mpa mpa = new Mpa(rs.getInt("rating_id"), rs.getString("mpa_name"));
-        return new Film(rs.getInt("id"),
-                rs.getString("name"),
-                rs.getString("description"),
-                rs.getDate("release_date").toLocalDate(),
-                rs.getInt("duration"),
-                mpa,
-                new LinkedHashSet<>()
-        );
+    private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
+        Mpa filmMpa = Mpa.builder()
+                .id(resultSet.getInt("mpa.id"))
+                .name(resultSet.getString("mpa.name"))
+                .build();
+
+        return Film.builder()
+                .id(resultSet.getInt("id"))
+                .name(resultSet.getString("name"))
+                .description(resultSet.getString("description"))
+                .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
+                .duration(resultSet.getInt("duration"))
+                .mpa(filmMpa)
+                .genres(new LinkedHashSet<>())
+                .build();
     }
 
     @Override
