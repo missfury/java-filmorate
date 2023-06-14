@@ -131,7 +131,7 @@ public class FilmDbStorage implements FilmStorage {
                 "where fg.genre_id = g.id AND fg.film_id in (" + inSql + ")";
         jdbcTemplate.query(sqlQuery, (rs) -> {
             if (!rs.wasNull()) {
-                final Film film = ids.get(rs.getInt("ID"));
+                final Film film = ids.get(rs.getInt("FILM_ID"));
                 film.addGenre(new Genre(rs.getInt("ID"), rs.getString("NAME")));
             }
         }, films.stream().map(Film::getId).toArray());
