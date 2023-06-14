@@ -34,18 +34,23 @@ public class FilmDbStorage implements FilmStorage {
         String sqlQuery = "SELECT * " +
                 "FROM films AS f " +
                 "JOIN mpa AS m ON f.rating = m.id";
-        return jdbcTemplate.query(sqlQuery, this::makeFilm);
+        List<Film> films = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs));
+        loadFilmsGenres(films);
+        return films;
     }
 
     @Override
     public Film getFilmById(int filmId) {
-        try {
-            return jdbcTemplate.queryForObject("SELECT * " +
-                    "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
-                    "WHERE f.id = ?", this::makeFilm, filmId);
-        } catch (DataAccessException exception) {
-            return null;
+        final String sql = "SELECT * " +
+                "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
+                "WHERE f.id = ?";
+        final List<Film> films =
+                jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs), filmId);
+        if (films.size() != 1) {
+            throw new NotExistException("Not Found film id = " + filmId);
         }
+        loadFilmsGenres(films);
+        return films.get(0);
     }
 
     @Override
