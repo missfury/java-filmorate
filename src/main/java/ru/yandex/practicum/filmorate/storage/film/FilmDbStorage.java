@@ -9,7 +9,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.Date;
@@ -17,7 +16,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Repository("filmDbStorage")
@@ -34,23 +32,18 @@ public class FilmDbStorage implements FilmStorage {
         String sqlQuery = "SELECT * " +
                 "FROM films AS f " +
                 "JOIN mpa AS m ON f.rating = m.id";
-        List<Film> films = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs));
-        loadFilmsGenres(films);
-        return films;
+        return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
 
     @Override
     public Film getFilmById(int filmId) {
-        final String sql = "SELECT * " +
-                "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
-                "WHERE f.id = ?";
-        final List<Film> films =
-                jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs), filmId);
-        if (films.size() != 1) {
-            throw new NotExistException("Not Found film id = " + filmId);
+        try {
+            return jdbcTemplate.queryForObject("SELECT * " +
+                    "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
+                    "WHERE f.id = ?", this::makeFilm, filmId);
+        } catch (DataAccessException exception) {
+            return null;
         }
-        loadFilmsGenres(films);
-        return films.get(0);
     }
 
     @Override
@@ -134,47 +127,20 @@ public class FilmDbStorage implements FilmStorage {
                 "GROUP BY films.id, films.name, films.description, films.release_date, films.duration " +
                 "ORDER BY COUNT(films_like.film_id) DESC " +
                 "LIMIT ?";
-        List<Film> films = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs), limitSize);
-        loadFilmsGenres(films);
-        return films;
+        return jdbcTemplate.query(sqlQuery, this::makeFilm,limitSize);
     }
 
-    private Film makeFilm(ResultSet resultSet) throws SQLException {
-        Film film = new Film(
-                resultSet.getInt("id"),
-                resultSet.getString("name"),
-                resultSet.getString("description"),
-                resultSet.getDate("release_date").toLocalDate(),
-                resultSet.getInt("duration"),
-                resultSet.getInt("rating")
+    private Film makeFilm(ResultSet rs, int rowNum) throws SQLException {
+        Mpa mpa = new Mpa(rs.getInt("rating_id"), rs.getString("mpa_name"));
+        return new Film(rs.getInt("id"),
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getDate("release_date").toLocalDate(),
+                rs.getInt("duration"),
+                mpa,
+                new LinkedHashSet<>()
         );
-        film.setMpa(
-                new Mpa(resultSet.getInt("id"),
-                        resultSet.getString("name")));
-        return film;
     }
-
-    private void loadFilmsGenres(List<Film> films) throws DataAccessException {
-        final List<Integer> ids = films.stream().map(Film::getId).collect(Collectors.toList());
-        String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));
-        jdbcTemplate.query(
-                String.format("select FILM_ID, G.* from GENRE G " +
-                        "                        left join FILMS_GENRE FG on G.ID = FG.GENRE_ID " +
-                        "                        where FILM_ID in (%s)", inSql),
-                ids.toArray(),
-                (rs, rowNum) -> makeFilmList(rs, films));
-    }
-
-    private Film makeFilmList(ResultSet rs, List<Film> films) throws SQLException {
-        long filmId = rs.getInt("film_id");
-        int genreId = rs.getInt("genre_id");
-        String name = rs.getString("name");
-        final Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getId, film -> film));
-        filmMap.get(filmId).addGenre(new Genre(genreId, name));
-        return filmMap.get(filmId);
-    }
-
-
 
     @Override
     public void checkFilm(int filmId) {

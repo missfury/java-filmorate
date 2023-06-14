@@ -31,13 +31,15 @@ public class Film {
     private int rating;
     private LinkedHashSet<Genre> genres;
 
-    public Film(int filmId, String nameFilm, String description, LocalDate releaseDate, int duration, int rate) {
-        this.id = filmId;
-        this.name = nameFilm;
+    public Film(Integer id, String name, String description, LocalDate releaseDate, Integer duration,
+                Mpa mpa, LinkedHashSet<Genre> genres) {
+        this.id = id;
+        this.name = name;
         this.description = description;
         this.releaseDate = releaseDate;
         this.duration = duration;
-        this.rating = rate;
+        this.mpa = mpa;
+        this.genres = genres;
     }
 
     public void addGenre(Genre genre) {
