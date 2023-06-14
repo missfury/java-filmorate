@@ -31,15 +31,6 @@ public class Film {
     private int rating;
     private Set<Genre> genres = new TreeSet<>(Comparator.comparing(Genre::getId));
 
-    public Film(int filmId, String nameFilm, String description, LocalDate releaseDate, int duration) {
-        this.id = filmId;
-        this.name = nameFilm;
-        this.description = description;
-        this.releaseDate = releaseDate;
-        this.duration = duration;
-    }
-
-
     public void addGenre(Genre genre) {
         if (genres == null) {
             genres = new LinkedHashSet<>();

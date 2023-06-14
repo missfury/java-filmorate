@@ -36,7 +36,7 @@ public class FilmDbStorage implements FilmStorage {
         String sqlQuery = "SELECT * " +
                 "FROM films AS f " +
                 "JOIN mpa AS m ON f.rating = m.id";
-        return jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs));
+        return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class FilmDbStorage implements FilmStorage {
         try {
             return jdbcTemplate.queryForObject("SELECT * " +
                     "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
-                    "WHERE f.id = ?", (rs, rowNum) -> makeFilm(rs), filmId);
+                    "WHERE f.id = ?", this::makeFilm, filmId);
         } catch (DataAccessException exception) {
             return null;
         }
@@ -159,22 +159,23 @@ public class FilmDbStorage implements FilmStorage {
                 "GROUP BY films.id, films.name, films.description, films.release_date, films.duration " +
                 "ORDER BY COUNT(films_like.film_id) DESC " +
                 "LIMIT ?";
-        return jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs), limitSize);
+        return jdbcTemplate.query(sqlQuery, this::makeFilm,limitSize);
     }
 
-    private Film makeFilm(ResultSet resultSet) throws SQLException {
-        log.info("filmStorage makeFilm");
-        Film film = new Film(
-                resultSet.getInt("id"),
-                resultSet.getString("name"),
-                resultSet.getString("description"),
-                resultSet.getDate("release_date").toLocalDate(),
-                resultSet.getInt("duration")
-        );
-        film.setMpa(
-                new Mpa(resultSet.getInt("id"),
-                        resultSet.getString("name")));
-        return film;
+    private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
+        Mpa filmMpa = Mpa.builder()
+                .id(resultSet.getInt("mpa.id"))
+                .name(resultSet.getString("mpa.name"))
+                .build();
+        return Film.builder()
+                .id(resultSet.getInt("id"))
+                .name(resultSet.getString("name"))
+                .description(resultSet.getString("description"))
+                .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
+                .duration(resultSet.getInt("duration"))
+                .mpa(filmMpa)
+                .genres(new LinkedHashSet<>())
+                .build();
     }
 
     @Override
