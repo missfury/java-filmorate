@@ -89,28 +89,23 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void addGenresToFilm(Film film) {
-        final int filmId = film.getId();
-        jdbcTemplate.update(
-                "DELETE FROM FILMS_GENRE WHERE FILM_ID = ?",
-                filmId);
-        final TreeSet<Genre> genres = new TreeSet<>(Comparator.comparing(Genre::getId));
-        if (film.getGenres() == null) {
-            film.setGenres(genres);
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
             return;
         }
-        genres.addAll(film.getGenres());
-        film.setGenres(genres);
-        final List<Genre> genresList = new ArrayList<>(film.getGenres());
-        jdbcTemplate.batchUpdate(
-                "insert into FILMS_GENRE (FILM_ID, GENRE_ID) values (?, ?)",
+        String sql = "INSERT INTO films_genre (film_id, genre_id) " +
+                "VALUES(?,?)";
+        List<Genre> genres = new ArrayList<>(film.getGenres());
+        jdbcTemplate.batchUpdate(sql,
                 new BatchPreparedStatementSetter() {
+                    @Override
                     public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        ps.setInt(1, filmId);
-                        ps.setInt(2, genresList.get(i).getId());
+                        ps.setInt(1, film.getId());
+                        ps.setInt(2, genres.get(i).getId());
                     }
 
+                    @Override
                     public int getBatchSize() {
-                        return genresList.size();
+                        return film.getGenres().size();
                     }
                 });
     }
