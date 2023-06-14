@@ -174,7 +174,6 @@ public class FilmDbStorage implements FilmStorage {
                 .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
                 .duration(resultSet.getInt("duration"))
                 .mpa(filmMpa)
-                .genres(new LinkedHashSet<>())
                 .build();
     }
 
