@@ -1,4 +1,5 @@
 package ru.yandex.practicum.filmorate.storage.film;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -17,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
+
 @Slf4j
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmStorage {
@@ -34,6 +36,7 @@ public class FilmDbStorage implements FilmStorage {
                 "JOIN mpa AS m ON f.rating = m.id";
         return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
+
     @Override
     public Film getFilmById(int filmId) {
         try {
@@ -44,6 +47,7 @@ public class FilmDbStorage implements FilmStorage {
             return null;
         }
     }
+
     @Override
     public Film addFilm(Film film) {
         KeyHolder generatedId = new GeneratedKeyHolder();
@@ -64,6 +68,7 @@ public class FilmDbStorage implements FilmStorage {
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
+
     @Override
     public Film updateFilm(Film film, int filmId) {
         jdbcTemplate.update(
@@ -80,6 +85,7 @@ public class FilmDbStorage implements FilmStorage {
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }
+
     private void addGenresToFilm(Film film) {
         final int filmId = film.getId();
         jdbcTemplate.update(
@@ -105,6 +111,7 @@ public class FilmDbStorage implements FilmStorage {
                     }
                 });
     }
+
     @Override
     public void loadFilmsGenres(List<Film> films) throws DataAccessException {
         final List<Integer> ids = films.stream().map(Film::getId).collect(Collectors.toList());
@@ -124,6 +131,7 @@ public class FilmDbStorage implements FilmStorage {
         filmMap.get(filmId).addGenre(new Genre(genreId, name));
         return filmMap.get(filmId);
     }
+
     @Override
     public void removeFilm(int filmId) {
         if (jdbcTemplate.update("DELETE FROM films " +
@@ -132,6 +140,7 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotExistException("Фильм с ID: " + filmId + " не найден");
         }
     }
+
     @Override
     public Film addLike(int filmId, int userId) {
         jdbcTemplate.update(
@@ -140,6 +149,7 @@ public class FilmDbStorage implements FilmStorage {
                 userId);
         return getFilmById(filmId);
     }
+
     @Override
     public Film removeLike(int filmId, int userId) {
         jdbcTemplate.update(
@@ -148,6 +158,7 @@ public class FilmDbStorage implements FilmStorage {
                 userId);
         return getFilmById(filmId);
     }
+
     @Override
     public List<Film> getMostPopularFilms(int limitSize) {
         String sqlQuery = "SELECT " +
@@ -167,6 +178,7 @@ public class FilmDbStorage implements FilmStorage {
                 "LIMIT ?";
         return jdbcTemplate.query(sqlQuery, this::makeFilm,limitSize);
     }
+
     private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
         Mpa filmMpa = Mpa.builder()
                 .id(resultSet.getInt("mpa.id"))
@@ -182,6 +194,7 @@ public class FilmDbStorage implements FilmStorage {
                 .genres(new TreeSet<>())
                 .build();
     }
+
     @Override
     public void checkFilm(int filmId) {
         if (getFilmById(filmId) == null) {
