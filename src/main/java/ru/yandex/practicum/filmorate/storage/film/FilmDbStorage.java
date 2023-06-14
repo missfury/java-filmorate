@@ -26,7 +26,8 @@ public class FilmDbStorage implements FilmStorage {
 
     @Autowired
     public FilmDbStorage(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;    }
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     @Override
     public List<Film> getFilms() {
