@@ -48,21 +48,18 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film addFilm(Film film) {
-        KeyHolder generatedId = new GeneratedKeyHolder();
-
+        String sqlQuery = "INSERT INTO films (name,description,release_date,duration,rating) VALUES (?,?,?,?,?)";
+        KeyHolder id = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO films (name, description, release_date, duration, rating) VALUES(?,?,?,?,?)",
-                    new String[]{"id"});
-            stmt.setString(1, film.getName());
-            stmt.setString(2, film.getDescription());
-            stmt.setDate(3, Date.valueOf(film.getReleaseDate()));
-            stmt.setInt(4, film.getDuration());
-            stmt.setInt(5, film.getMpa().getId());
-            return stmt;
-        }, generatedId);
-        int filmId = Objects.requireNonNull(generatedId.getKey()).intValue();
-        film.setId(filmId);
+            PreparedStatement ps = connection.prepareStatement(sqlQuery, new String[]{"id"});
+            ps.setString(1, film.getName());
+            ps.setString(2, film.getDescription());
+            ps.setDate(3, java.sql.Date.valueOf(film.getReleaseDate()));
+            ps.setInt(4, film.getDuration());
+            ps.setInt(5, film.getMpa().getId());
+            return ps;
+        }, id);
+        film.setId(Objects.requireNonNull(id.getKey()).intValue());
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
