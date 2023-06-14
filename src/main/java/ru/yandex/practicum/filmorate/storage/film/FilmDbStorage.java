@@ -17,6 +17,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -41,13 +43,12 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film getFilmById(int filmId) {
-        try {
-            return jdbcTemplate.queryForObject("SELECT * " +
-                    "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
-                    "WHERE f.id = ?", this::makeFilm, filmId);
-        } catch (DataAccessException exception) {
-            return null;
-        }
+        final String sql = "SELECT * " +
+                "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
+                "WHERE f.id = ?";
+        final List<Film> films =
+                jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs, rowNum), filmId);
+        return films.get(0);
     }
 
     @Override
@@ -115,6 +116,18 @@ public class FilmDbStorage implements FilmStorage {
                 });
     }
 
+    public void getAllByIdFilm(List<Film> films) {
+        final Map<Integer, Film> ids = films.stream().collect(Collectors.toMap(Film::getId, Function.identity()));
+        String inSql = String.join(",", Collections.nCopies(films.size(), "?"));
+        final String sqlQuery = "SELECT * from genres g, films_genre fg " +
+                "where fg.genre_id = g.id AND fg.film_id in (" + inSql + ")";
+        jdbcTemplate.query(sqlQuery, (rs) -> {
+            if (!rs.wasNull()) {
+                final Film film = ids.get(rs.getInt("ID"));
+                film.addGenre(new Genre(rs.getInt("ID"), rs.getString("NAME")));
+            }
+        }, films.stream().map(Film::getId).toArray());
+    }
 
     @Override
     public void removeFilm(int filmId) {
