@@ -21,5 +21,5 @@ public interface FilmStorage {
 
     void checkFilm(final int filmId);
 
-    List<Film> getMostPopularFilms(int limitSize);
+    List<Film> getMostPopularFilms(int id);
 }

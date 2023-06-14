@@ -75,8 +75,8 @@ public class FilmService {
         return filmStorage.removeLike(filmId, userId);
     }
 
-    public List<Film> getMostPopularFilms(int limitSize) {
-        return filmStorage.getMostPopularFilms(limitSize);
+    public List<Film> getMostPopularFilms(Integer number) {
+        return filmStorage.getMostPopularFilms(number);
     }
 
     public boolean validate(Film film) {

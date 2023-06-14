@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -100,23 +99,12 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getMostPopularFilms(int limitSize) {
-        String sqlQuery = "SELECT " +
-                "films.id, " +
-                "films.name, " +
-                "films.description, " +
-                "films.release_date, " +
-                "films.duration," +
-                "mpa.id, " +
-                "mpa.name, " +
-                "COUNT(films_like.film_id)" +
-                "FROM films " +
-                "JOIN mpa ON films.rating = mpa.id " +
-                "LEFT JOIN films_like ON films.id = films_like.film_id " +
-                "GROUP BY films.id, films.name, films.description, films.release_date, films.duration " +
-                "ORDER BY COUNT(films_like.film_id) DESC " +
-                "LIMIT ?";
-        return jdbcTemplate.query(sqlQuery, this::makeFilm,limitSize);
+    public List<Film> getMostPopularFilms(int id) {
+        String sqlQuery = "SELECT f.*, m.name AS mpa_name FROM films AS f " +
+                "LEFT JOIN rating AS m ON f.rating = m.id " +
+                "LEFT JOIN films_like AS l ON f.id = l.film_id " +
+                "GROUP BY f.id ORDER BY COUNT(l.user_id) DESC LIMIT ?";
+        return jdbcTemplate.query(sqlQuery, this::makeFilm, id);
     }
 
     private Film makeFilm(ResultSet rs, int rowNum) throws SQLException {
