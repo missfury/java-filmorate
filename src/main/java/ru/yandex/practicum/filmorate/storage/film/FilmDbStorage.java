@@ -28,21 +28,16 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getFilms() {
-        String sqlQuery = "SELECT * " +
-                "FROM films AS f " +
-                "JOIN mpa AS m ON f.rating = m.id";
+        String sqlQuery = "SELECT f.*,  m.name AS mpa_name FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.rating = m.id";
         return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
 
     @Override
     public Film getFilmById(int filmId) {
-        try {
-            return jdbcTemplate.queryForObject("SELECT * " +
-                    "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
-                    "WHERE f.id = ?", this::makeFilm, filmId);
-        } catch (DataAccessException exception) {
-            return null;
-        }
+        String sqlQuery = "SELECT f.*,  m.name AS mpa_name FROM films AS f " +
+                "LEFT JOIN mpa AS m ON f.rating = m.id WHERE f.id = ?";
+        return jdbcTemplate.queryForObject(sqlQuery, this::makeFilm, filmId);
     }
 
     @Override
@@ -64,18 +59,16 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Film updateFilm(Film film, int filmId) {
-        jdbcTemplate.update(
-                "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, " +
-                        "rating = ? WHERE id = ?",
-                film.getName(),
-                film.getDescription(),
-                film.getReleaseDate(),
-                film.getDuration(),
-                film.getMpa().getId(),
-                filmId);
-        film.setId(filmId);
-        log.info("Фильм с id: {} изменен", film.getId());
+    public Film updateFilm(Film film) {
+        String sqlQuery = "UPDATE films SET " +
+                "name = ?," +
+                "description = ?," +
+                "release_date = ?," +
+                "duration = ?," +
+                "rating = ?" +
+                "WHERE id = ?";
+        jdbcTemplate.update(sqlQuery, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(),
+                film.getMpa().getId(), film.getId());
         return film;
     }
 

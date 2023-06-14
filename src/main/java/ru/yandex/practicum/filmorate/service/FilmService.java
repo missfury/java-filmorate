@@ -54,7 +54,7 @@ public class FilmService {
         filmStorage.checkFilm(film.getId());
         FilmValidate.validate(film);
         genreStorage.updateFilmGenre(film);
-        filmStorage.updateFilm(film, film.getId());
+        filmStorage.updateFilm(film);
         return film;
     }
 
