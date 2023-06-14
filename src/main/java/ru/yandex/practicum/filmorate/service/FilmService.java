@@ -32,7 +32,7 @@ public class FilmService {
 
     public List<Film> getFilms() {
         List<Film> films = filmStorage.getFilms();
-        genreStorage.getAllByIdFilm(films);
+        //genreStorage.getAllByIdFilm(films);
         return films;
     }
 
