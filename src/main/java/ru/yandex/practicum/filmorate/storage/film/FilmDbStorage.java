@@ -162,20 +162,15 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
-        Mpa filmMpa = Mpa.builder()
-                .id(resultSet.getInt("mpa.id"))
-                .name(resultSet.getString("mpa.name"))
-                .build();
-
-        return Film.builder()
-                .id(resultSet.getInt("id"))
-                .name(resultSet.getString("name"))
-                .description(resultSet.getString("description"))
-                .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
-                .duration(resultSet.getInt("duration"))
-                .mpa(filmMpa)
-                .genres(new LinkedHashSet<>())
-                .build();
+        Mpa mpa = new Mpa(resultSet.getInt("id"), resultSet.getString("name"));
+        return new Film(resultSet.getInt("id"),
+                resultSet.getString("name"),
+                resultSet.getString("description"),
+                resultSet.getDate("release_date").toLocalDate(),
+                resultSet.getInt("duration"),
+                mpa,
+                new LinkedHashSet<>()
+        );
     }
 
     @Override
