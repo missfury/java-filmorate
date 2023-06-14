@@ -16,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -113,6 +114,27 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
+    public void loadFilmsGenres(List<Film> films) throws DataAccessException {
+        final List<Integer> ids = films.stream().map(Film::getId).collect(Collectors.toList());
+        String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));
+        jdbcTemplate.query(
+                String.format("select FILM_ID, G.* from GENRE G " +
+                        "                        left join FILMS_GENRE FG on G.ID = FG.GENRE_ID " +
+                        "                        where FILM_ID in (%s)", inSql),
+                ids.toArray(),
+                (rs, rowNum) -> makeFilmList(rs, films));
+    }
+
+    private Film makeFilmList(ResultSet rs, List<Film> films) throws SQLException {
+        long filmId = rs.getLong("film_id");
+        int genreId = rs.getInt("id");
+        String name = rs.getString("name");
+        final Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getId, film -> film));
+        filmMap.get(filmId).addGenre(new Genre(genreId, name));
+        return filmMap.get(filmId);
+    }
+
+    @Override
     public void removeFilm(int filmId) {
         if (jdbcTemplate.update("DELETE FROM films " +
                 "WHERE film_id = ?", filmId) == 0) {
@@ -171,6 +193,7 @@ public class FilmDbStorage implements FilmStorage {
                 .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
                 .duration(resultSet.getInt("duration"))
                 .mpa(filmMpa)
+                .genres(new TreeSet<>())
                 .build();
     }
 
