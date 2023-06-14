@@ -63,7 +63,7 @@ public class GenreDbStorage implements GenreStorage {
 
     private Film makeFilmList(ResultSet rs, List<Film> films) throws SQLException {
         long filmId = rs.getLong("film_id");
-        int genreId = rs.getInt("genre_id");
+        int genreId = rs.getInt("id");
         String name = rs.getString("name");
         final Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getId, film -> film));
         filmMap.get(filmId).addGenre(new Genre(genreId, name));
