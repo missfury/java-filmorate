@@ -15,7 +15,6 @@ import java.util.List;
 
 @Slf4j
 @Service
-
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
