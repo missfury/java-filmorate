@@ -6,11 +6,14 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -32,12 +35,17 @@ public class GenreDbStorage implements GenreStorage {
     }
 
     @Override
-    public List<Genre> getAllByIdFilm(int filmId) {
-        String sqlQuery = "SELECT g.id, name " +
-                "FROM genre AS g " +
-                "JOIN films_genre AS fg ON g.id = fg.genre_id " +
-                "WHERE film_id = ?";
-        return jdbcTemplate.query(sqlQuery, this::makeGenre, filmId);
+    public void getAllByIdFilm(List<Film> films) {
+        final Map<Integer, Film> ids = films.stream().collect(Collectors.toMap(Film::getId, Function.identity()));
+        String inSql = String.join(",", Collections.nCopies(films.size(), "?"));
+        final String sqlQuery = "SELECT * from genres g, films_genre fg " +
+                "where fg.genre_id = g.id AND fg.film_id in (" + inSql + ")";
+        jdbcTemplate.query(sqlQuery, (rs) -> {
+            if (!rs.wasNull()) {
+                final Film film = ids.get(rs.getInt("ID"));
+                film.addGenre(new Genre(rs.getInt("ID"), rs.getString("NAME")));
+            }
+        }, films.stream().map(Film::getId).toArray());
     }
 
     @Override

@@ -12,7 +12,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
-import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,7 +33,6 @@ class FilmStorageTest {
         film.setDuration(150);
         film.setReleaseDate(LocalDate.of(2020, 8, 3));
         film.setMpa(new Mpa(1,"G"));
-        film.setGenres(null);
 
         user = new User();
         user.setEmail("test@ya.ru");
@@ -50,7 +48,6 @@ class FilmStorageTest {
                 .releaseDate(LocalDate.of(2000, 1, 1))
                 .duration(120)
                 .mpa(new Mpa(1, "G"))
-                .genres(Collections.emptyList())
                 .build();
     }
 

@@ -8,7 +8,8 @@ import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import java.util.List;
+
+import java.util.*;
 
 @Data
 @Builder
@@ -27,6 +28,13 @@ public class Film {
     private Integer duration;
     private List<Integer> usersLikes;
     private Mpa mpa;
-    private List<Genre> genres;
+    private Set<Genre> genres = new TreeSet<>(Comparator.comparing(Genre::getId));
+
+    public void addGenre(Genre genre) {
+        if (genres == null) {
+            genres = new LinkedHashSet<>();
+        }
+        genres.add(genre);
+    }
 }
 

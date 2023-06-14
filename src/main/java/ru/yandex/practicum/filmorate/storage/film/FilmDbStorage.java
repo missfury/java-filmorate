@@ -70,9 +70,8 @@ public class FilmDbStorage implements FilmStorage {
         int filmId = Objects.requireNonNull(generatedId.getKey()).intValue();
         film.setId(filmId);
         if (film.getGenres() != null) {
-            addGenresToFilm(film.getGenres(), film.getId());
+            addGenresToFilm((TreeSet<Genre>) film.getGenres(), film.getId());
         }
-        film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
@@ -83,7 +82,7 @@ public class FilmDbStorage implements FilmStorage {
             jdbcTemplate.update(
                     "DELETE FROM films_genre WHERE film_id = ?",
                     film.getId());
-            addGenresToFilm(film.getGenres(), film.getId());
+            addGenresToFilm((TreeSet<Genre>) film.getGenres(), film.getId());
         }
         jdbcTemplate.update(
                 "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, " +
@@ -95,7 +94,6 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 filmId);
         film.setId(filmId);
-        film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }
@@ -129,7 +127,7 @@ public class FilmDbStorage implements FilmStorage {
         return getFilmById(filmId);
     }
 
-    private void addGenresToFilm(List<Genre> genres, int filmId) {
+    private void addGenresToFilm(TreeSet<Genre> genres, int filmId) {
         if (genres == null) {
             return;
         }
@@ -188,7 +186,7 @@ public class FilmDbStorage implements FilmStorage {
                 .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
                 .duration(resultSet.getInt("duration"))
                 .mpa(filmMpa)
-                .genres(genreStorage.getAllByIdFilm(resultSet.getInt("id")))
+                .genres(new HashSet<>())
                 .build();
     }
 
