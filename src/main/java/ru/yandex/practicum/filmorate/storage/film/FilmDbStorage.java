@@ -9,6 +9,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.Date;
@@ -16,6 +17,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository("filmDbStorage")
@@ -37,13 +39,16 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film getFilmById(int filmId) {
-        try {
-            return jdbcTemplate.queryForObject("SELECT * " +
-                    "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
-                    "WHERE f.id = ?", this::makeFilm, filmId);
-        } catch (DataAccessException exception) {
-            return null;
+        final String sql = "SELECT * " +
+                "FROM films AS f JOIN mpa AS m ON f.rating = m.id " +
+                "WHERE f.id = ?";
+        final List<Film> films =
+                jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs, rowNum), filmId);
+        if (films.size() != 1) {
+            throw new NotExistException("Не найден фильм с id = " + filmId);
         }
+        loadFilmsGenres(films);
+        return films.get(0);
     }
 
     @Override
@@ -127,7 +132,9 @@ public class FilmDbStorage implements FilmStorage {
                 "GROUP BY films.id, films.name, films.description, films.release_date, films.duration " +
                 "ORDER BY COUNT(films_like.film_id) DESC " +
                 "LIMIT ?";
-        return jdbcTemplate.query(sqlQuery, this::makeFilm,limitSize);
+        List<Film> films = jdbcTemplate.query(sqlQuery, (rs, rowNum) -> makeFilm(rs,rowNum), limitSize);
+        loadFilmsGenres(films);
+        return films;
     }
 
     private Film makeFilm(ResultSet resultSet, int rowNum) throws SQLException {
@@ -146,6 +153,28 @@ public class FilmDbStorage implements FilmStorage {
                 .genres(new LinkedHashSet<>())
                 .build();
     }
+
+    private void loadFilmsGenres(List<Film> films) throws DataAccessException {
+        final List<Integer> ids = films.stream().map(Film::getId).collect(Collectors.toList());
+        String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));
+        jdbcTemplate.query(
+                String.format("select FILM_ID, G.* from GENRE G " +
+                        "                        left join FILMS_GENRE FG on G.ID = FG.GENRE_ID " +
+                        "                        where FILM_ID in (%s)", inSql),
+                ids.toArray(),
+                (rs, rowNum) -> makeFilmList(rs, films));
+    }
+
+    private Film makeFilmList(ResultSet rs, List<Film> films) throws SQLException {
+        long filmId = rs.getInt("film_id");
+        int genreId = rs.getInt("genre_id");
+        String name = rs.getString("name");
+        final Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getId, film -> film));
+        filmMap.get(filmId).addGenre(new Genre(genreId, name));
+        return filmMap.get(filmId);
+    }
+
+
 
     @Override
     public void checkFilm(int filmId) {

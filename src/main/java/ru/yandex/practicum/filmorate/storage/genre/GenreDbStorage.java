@@ -39,7 +39,7 @@ public class GenreDbStorage implements GenreStorage {
     }
 
     @Override
-    public void getAllByIdFilm(List<Film> films) {
+    public void getAllByIdFilm(List<Film> films) throws DataAccessException {
         final Map<Integer, Film> ids = films.stream().collect(Collectors.toMap(Film::getId, Function.identity()));
         String inSql = String.join(",", Collections.nCopies(films.size(), "?"));
         final String sqlQuery = "SELECT * from genres g, films_genre fg " +

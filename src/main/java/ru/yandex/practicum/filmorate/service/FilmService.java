@@ -39,7 +39,7 @@ public class FilmService {
     public Film getFilmById(int filmId) {
         filmStorage.checkFilm(filmId);
         Film film = filmStorage.getFilmById(filmId);
-        genreStorage.getAllByIdFilm(List.of(film));
+        //genreStorage.getAllByIdFilm(List.of(film));
         return film;
     }
 
