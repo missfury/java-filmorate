@@ -49,6 +49,10 @@ public class FilmDbStorage implements FilmStorage {
                     "WHERE f.id = ?";
             final List<Film> films =
                     jdbcTemplate.query(sql, (rs, rowNum) -> makeFilm(rs, rowNum), filmId);
+            if (films.size() != 1) {
+                throw new NotExistException("Не найден фильм с id = " + filmId);
+            }
+            getAllByIdFilm(films);
             return films.get(0);
         } catch (DataAccessException exception) {
             return null;
