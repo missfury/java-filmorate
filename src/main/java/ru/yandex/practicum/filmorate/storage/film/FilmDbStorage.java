@@ -168,15 +168,14 @@ public class FilmDbStorage implements FilmStorage {
                 .name(resultSet.getString("mpa.name"))
                 .build();
 
-        return Film.builder()
-                .id(resultSet.getInt("id"))
-                .name(resultSet.getString("name"))
-                .description(resultSet.getString("description"))
-                .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
-                .duration(resultSet.getInt("duration"))
-                .mpa(filmMpa)
-                .genres(new HashSet<>())
-                .build();
+        return new Film(resultSet.getInt("id"),
+                resultSet.getString("name"),
+                resultSet.getString("description"),
+                resultSet.getDate("release_date").toLocalDate(),
+                resultSet.getInt("duration"),
+                filmMpa,
+                new LinkedHashSet<>()
+        );
     }
 
     @Override
