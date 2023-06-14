@@ -155,7 +155,6 @@ public class UserDbStorage implements UserStorage {
                 "AND f.friend_id IN (" +
                 "SELECT friend_id " +
                 "FROM friends AS f " +
-                "LEFT OUTER JOIN users AS u ON u.id = f.friend_id " +
                 "WHERE f.user_id = ?)";
         return jdbcTemplate.query(sqlQuery, this::makeUser, id, otherId);
     }
@@ -188,7 +187,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void checkUser(int userId) {
-        if (getUserById(userId) == null || userId < 0) {
+        if (getUserById(userId) == null) {
             log.warn("ID - {} не существует", userId);
             throw new NotExistException("Пользователь с ID: " + userId + " не найден");
         }
