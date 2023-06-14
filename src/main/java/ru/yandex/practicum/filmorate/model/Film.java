@@ -29,8 +29,7 @@ public class Film {
     private List<Integer> usersLikes;
     private Mpa mpa;
     private int rating;
-    private LinkedHashSet<Genre> genres;
-
+    private Set<Genre> genres = new TreeSet<>(Comparator.comparing(Genre::getId));
 
     public void addGenre(Genre genre) {
         if (genres == null) {
