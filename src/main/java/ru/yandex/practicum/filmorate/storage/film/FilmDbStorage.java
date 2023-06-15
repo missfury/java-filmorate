@@ -25,12 +25,10 @@ import java.util.stream.Collectors;
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
-    private final GenreStorage genreStorage;
 
     @Autowired
-    public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.genreStorage = genreStorage;
     }
 
     @Override
@@ -72,7 +70,6 @@ public class FilmDbStorage implements FilmStorage {
         if (film.getGenres() != null) {
             addGenresToFilm(film.getGenres(), film.getId());
         }
-        film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
@@ -95,7 +92,6 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 filmId);
         film.setId(filmId);
-        film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }
@@ -185,7 +181,7 @@ public class FilmDbStorage implements FilmStorage {
                 .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
                 .duration(resultSet.getInt("duration"))
                 .mpa(filmMpa)
-                .genres(genreStorage.getAllByIdFilm(resultSet.getInt("id")))
+                .genres(new ArrayList<>())
                 .build();
     }
 
