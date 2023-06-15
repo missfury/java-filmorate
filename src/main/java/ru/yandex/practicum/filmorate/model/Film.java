@@ -28,11 +28,7 @@ public class Film {
     private Integer duration;
     private List<Integer> usersLikes;
     private Mpa mpa;
-    private int rating;
-    private Set<Genre> genres = new TreeSet<>(Comparator.comparing(Genre::getId));
+    private List<Genre> genres;
 
-    public void addGenre(Genre genre) {
-        genres.add(genre);
-    }
 }
 

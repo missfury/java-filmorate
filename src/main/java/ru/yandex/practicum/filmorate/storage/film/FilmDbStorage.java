@@ -12,6 +12,8 @@ import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,11 +25,13 @@ import java.util.stream.Collectors;
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
+    private final GenreStorage genreStorage;
 
     @Autowired
-    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage) {
         this.jdbcTemplate = jdbcTemplate;
-}
+        this.genreStorage = genreStorage;
+    }
 
     @Override
     public List<Film> getFilms() {
@@ -51,6 +55,7 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film addFilm(Film film) {
         KeyHolder generatedId = new GeneratedKeyHolder();
+
         jdbcTemplate.update(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO films (name, description, release_date, duration, rating) VALUES(?,?,?,?,?)",
@@ -64,13 +69,22 @@ public class FilmDbStorage implements FilmStorage {
         }, generatedId);
         int filmId = Objects.requireNonNull(generatedId.getKey()).intValue();
         film.setId(filmId);
-        addGenresToFilm(film);
+        if (film.getGenres() != null) {
+            addGenresToFilm(film.getGenres(), film.getId());
+        }
+        film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} создан", film.getId());
         return film;
     }
 
     @Override
     public Film updateFilm(Film film, int filmId) {
+        if (film.getGenres() != null) {
+            jdbcTemplate.update(
+                    "DELETE FROM films_genre WHERE film_id = ?",
+                    film.getId());
+            addGenresToFilm(film.getGenres(), film.getId());
+        }
         jdbcTemplate.update(
                 "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, " +
                         "rating = ? WHERE id = ?",
@@ -81,55 +95,34 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 filmId);
         film.setId(filmId);
-        addGenresToFilm(film);
+        film.setGenres(genreStorage.getAllByIdFilm(filmId));
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }
 
-    private void addGenresToFilm(Film film) {
-        final int filmId = film.getId();
-        jdbcTemplate.update(
-                "DELETE FROM FILMS_GENRE WHERE FILM_ID = ?",
-                filmId);
-        final TreeSet<Genre> genres = new TreeSet<>(Comparator.comparing(Genre::getId));
-        if (film.getGenres() == null) {
-            film.setGenres(genres);
+    private void addGenresToFilm(List<Genre> genres, int filmId) {
+        if (genres == null) {
             return;
         }
-        genres.addAll(film.getGenres());
-        film.setGenres(genres);
-        final List<Genre> genresList = new ArrayList<>(film.getGenres());
+        List<Integer> genreIds = genres.stream()
+                .map(Genre::getId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        String sqlQuery = "INSERT INTO FILMS_GENRE VALUES(?, ?)";
         jdbcTemplate.batchUpdate(
-                "insert into FILMS_GENRE (FILM_ID, GENRE_ID) values (?, ?)",
+                sqlQuery,
                 new BatchPreparedStatementSetter() {
                     public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        int genreId = genreIds.get(i);
                         ps.setInt(1, filmId);
-                        ps.setInt(2, genresList.get(i).getId());
+                        ps.setInt(2, genreId);
                     }
+
                     public int getBatchSize() {
-                        return genresList.size();
+                        return genreIds.size();
                     }
                 });
-    }
-
-    @Override
-    public void loadFilmsGenres(List<Film> films) throws DataAccessException {
-        final List<Integer> ids = films.stream().map(Film::getId).collect(Collectors.toList());
-        String inSql = String.join(",", Collections.nCopies(ids.size(), "?"));
-        jdbcTemplate.query(
-                String.format("select FILM_ID, G.* from GENRE G " +
-                        "                        left join FILMS_GENRE FG on G.ID = FG.GENRE_ID " +
-                        "                        where FILM_ID in (%s)", inSql),
-                ids.toArray(),
-                (rs, rowNum) -> makeFilmList(rs, films));
-    }
-    private Film makeFilmList(ResultSet rs, List<Film> films) throws SQLException {
-        long filmId = rs.getLong("film_id");
-        int genreId = rs.getInt("id");
-        String name = rs.getString("name");
-        final Map<Integer, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getId, film -> film));
-        filmMap.get(filmId).addGenre(new Genre(genreId, name));
-        return filmMap.get(filmId);
     }
 
     @Override
@@ -184,6 +177,7 @@ public class FilmDbStorage implements FilmStorage {
                 .id(resultSet.getInt("mpa.id"))
                 .name(resultSet.getString("mpa.name"))
                 .build();
+
         return Film.builder()
                 .id(resultSet.getInt("id"))
                 .name(resultSet.getString("name"))
@@ -191,9 +185,10 @@ public class FilmDbStorage implements FilmStorage {
                 .releaseDate(resultSet.getTimestamp("release_date").toLocalDateTime().toLocalDate())
                 .duration(resultSet.getInt("duration"))
                 .mpa(filmMpa)
-                .genres(new TreeSet<>())
+                .genres(genreStorage.getAllByIdFilm(resultSet.getInt("id")))
                 .build();
     }
+
 
     @Override
     public void checkFilm(int filmId) {

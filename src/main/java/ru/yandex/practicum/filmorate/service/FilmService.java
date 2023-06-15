@@ -19,27 +19,22 @@ import java.util.List;
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
-    private final GenreStorage genreStorage;
 
     @Autowired
     public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
-                       @Qualifier("userDbStorage") UserStorage userStorage,
-                       @Qualifier("genreDbStorage") GenreStorage genreStorage) {
+                       @Qualifier("userDbStorage") UserStorage userStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
-        this.genreStorage = genreStorage;
     }
 
     public List<Film> getFilms() {
         List<Film> films = filmStorage.getFilms();
-        filmStorage.loadFilmsGenres(films);
         return films;
     }
 
     public Film getFilmById(int filmId) {
         filmStorage.checkFilm(filmId);
         Film film = filmStorage.getFilmById(filmId);
-        filmStorage.loadFilmsGenres(List.of(film));
         return film;
     }
 

@@ -13,8 +13,6 @@ public interface FilmStorage {
 
     Film updateFilm(Film film, int filmId);
 
-    void loadFilmsGenres(List<Film> films);
-
     void removeFilm(int filmId);
 
     Film addLike(int filmId, int userId);

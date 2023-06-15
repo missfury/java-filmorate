@@ -22,8 +22,7 @@ public class GenreDbStorage implements GenreStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public Genre getById(int genreId) {
-        this.isGenreExisted(genreId);
+    public Genre getById(int  genreId) {
         String sqlQuery = "SELECT * FROM GENRE WHERE ID = ?";
         return jdbcTemplate.queryForObject(sqlQuery, this::makeGenre,  genreId);
     }
@@ -35,20 +34,20 @@ public class GenreDbStorage implements GenreStorage {
     }
 
     @Override
+    public List<Genre> getAllByIdFilm(int filmId) {
+        String sqlQuery = "SELECT g.id, name " +
+                "FROM genre AS g " +
+                "JOIN films_genre AS fg ON g.id = fg.genre_id " +
+                "WHERE film_id = ?";
+        return jdbcTemplate.query(sqlQuery, this::makeGenre, filmId);
+    }
+
+    @Override
     public void checkGenre(int genreId) {
         try {
             jdbcTemplate.queryForObject("SELECT * FROM GENRE WHERE ID = ?", this::makeGenre, genreId);
         } catch (DataAccessException exception) {
             throw new NotExistException("Жанра с ID: " + genreId + " не найдено");
-        }
-    }
-
-    @Override
-    public void isGenreExisted(int id) {
-        String sqlQuery = "SELECT name FROM genre WHERE id = ?";
-        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sqlQuery, id);
-        if (!rowSet.next()) {
-            throw new NotExistException("Жанр с id: " + id + " не найден");
         }
     }
 
