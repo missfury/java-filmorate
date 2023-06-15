@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -24,10 +25,12 @@ import java.util.stream.Collectors;
 @Repository("filmDbStorage")
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
+    private final GenreStorage genreStorage;
 
     @Autowired
-    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate, GenreStorage genreStorage) {
         this.jdbcTemplate = jdbcTemplate;
+        this.genreStorage = genreStorage;
     }
 
     @Override
@@ -75,10 +78,10 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film updateFilm(Film film, int filmId) {
-        if (film.getGenres() != null) {
             jdbcTemplate.update(
                     "DELETE FROM films_genre WHERE film_id = ?",
                     film.getId());
+        if (film.getGenres() != null) {
             addGenresToFilm(film.getGenres(), film.getId());
         }
         jdbcTemplate.update(
@@ -91,7 +94,6 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 filmId);
         film.setId(filmId);
-        addGenresToFilm(film.getGenres(), film.getId());
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }

@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 import static java.util.function.UnaryOperator.identity;
 
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -44,9 +43,11 @@ public class GenreDbStorage implements GenreStorage {
                 "FROM genre AS g, films_genre AS fg " +
                 "WHERE fg.genre_id = g.id AND fg.film_id IN (" + inSql + ")";
         jdbcTemplate.query(sqlQuery, (rs) -> {
-                    Film film = filmById.get(rs.getInt("film_id"));
-                    film.addGenre(makeGenre(rs, 0));
-                },
+            if (!rs.wasNull()) {
+                final Film film = filmById.get(rs.getInt("film_id"));
+                film.addGenre(new Genre(rs.getInt("id"), rs.getString("name")));
+                }
+            },
                 films.stream().map(Film::getId).toArray());
     }
 
