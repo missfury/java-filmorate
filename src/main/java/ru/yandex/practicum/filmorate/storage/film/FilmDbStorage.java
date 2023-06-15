@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.NotExistException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -94,6 +95,9 @@ public class FilmDbStorage implements FilmStorage {
                 film.getMpa().getId(),
                 filmId);
         film.setId(filmId);
+        List<Genre> genres = new ArrayList<>();
+        genres.addAll(findGenresByFilmId(film.getId()));
+        film.setGenres(genres);
         log.info("Фильм с id: {} изменен", film.getId());
         return film;
     }
@@ -122,6 +126,20 @@ public class FilmDbStorage implements FilmStorage {
                     }
                 });
     }
+
+    public List<Genre> findGenresByFilmId(int id) {
+        SqlRowSet genreRows = jdbcTemplate.queryForRowSet("SELECT id FROM films WHERE id = ?", id);
+        if (genreRows.next()) {
+            String sqlQuery = "SELECT g.id, g.name " +
+                    "FROM genre AS g " +
+                    "JOIN films_genre AS fg ON fg.genre_id = g.id " +
+                    "WHERE fg.film_id = ?";
+            return jdbcTemplate.query(sqlQuery, this::makeGenre, id);
+        } else {
+            throw new NotExistException(String.format("Фильм c id %d не найден", id));
+        }
+    }
+
 
     @Override
     public void removeFilm(int filmId) {
@@ -187,6 +205,9 @@ public class FilmDbStorage implements FilmStorage {
                 .build();
     }
 
+    private Genre makeGenre(ResultSet resultSet, int rowNum) throws SQLException {
+        return new Genre(resultSet.getInt("id"), resultSet.getString("name"));
+    }
 
     @Override
     public void checkFilm(int filmId) {
