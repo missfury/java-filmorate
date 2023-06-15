@@ -33,6 +33,5 @@ public class Film {
     public void addGenre(Genre genre) {
         genres.add(genre);
     }
-
 }
 

@@ -140,7 +140,6 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 
-
     @Override
     public void removeFilm(int filmId) {
         if (jdbcTemplate.update("DELETE FROM films " +
